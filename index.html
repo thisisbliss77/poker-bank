@@ -554,6 +554,8 @@ button.pcard { cursor: pointer; } button.pcard.on { outline: 3px solid var(--bra
   display: inline-flex; align-items: center; gap: 6px; background: none; border: 1px solid var(--seat-line); border-radius: 999px; padding: 4px 11px 4px 6px; font-size: 12px; color: var(--ink-faint); }
 .nuke-link:hover { color: var(--claret); border-color: #6b2b28; }
 .nuke-link svg { display: block; flex: none; }
+.import-choice { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px 12px; margin-top: 4px; }
+.import-choice .btn { min-width: 104px; } .import-choice span { font-size: 13px; color: var(--ink-soft); }
 .nuke-list { margin: 0; padding-left: 18px; color: var(--ink-soft); font-size: 14px; display: grid; gap: 2px; }
 .history button { text-align: left; background: var(--seat); border: 1px solid var(--seat-line); border-radius: 12px; padding: 12px 14px; }
 
@@ -1468,6 +1470,66 @@ const DataFile = {
     const history = d.history.map(h => ({ ...h, voided: h.voided || [] }));
     return { roster: d.roster, history, session, chips: d.chips == null ? null : ChipSet.normalize(d.chips), exportedAt: Number.isFinite(d.exportedAt) ? d.exportedAt : null };
   },
+  /**
+   * Adds a file's past sessions and players to this phone's data, keeping everything already here.
+   * Players are matched by name (ignoring capitals and extra spaces); the file's sessions are renumbered to this phone's players.
+   * A session already here (same id, e.g. from an earlier import) is kept once: whichever copy has more edits.
+   * The session in progress and the chip set on this phone are never touched.
+   */
+  merge(local, file, maxHistory = 1000) {
+    const key = n => String(n).trim().replace(/\s+/g, " ").toLowerCase();
+    const roster = local.roster.map(r => ({ ...r }));
+    const byName = new Map(roster.map(r => [key(r.name), r]));
+    const taken = new Set([...roster.map(r => r.id), ...Roster.idsInUse(local.history, local.session && local.session.events)].filter(Number.isInteger));
+    const fresh = () => { let id = Math.max(0, ...taken) + 1; taken.add(id); return id; };
+    // Profile details that pass the same checks as the Create a Player card; anything else is left out.
+    const field = r => { const out = {};
+      for (const [k, [, max]] of Object.entries(Roster.FIELDS)) { const v = typeof r[k] === "string" ? r[k].trim().replace(/\s+/g, " ") : ""; if (v && v.length <= max && !/[\u0000-\u001f\u007f]/.test(v)) out[k] = v; }
+      if (typeof r.hand === "string" && Roster.parseHand(r.hand)) out.hand = r.hand.trim();
+      return out; };
+    const map = new Map();
+    let addedPlayers = 0;
+    for (const r of file.roster) {
+      const mine = byName.get(key(r.name));
+      if (mine) {
+        map.set(r.id, mine.id);
+        for (const [f, v] of Object.entries(field(r))) if (mine[f] == null) mine[f] = v;      // fill in profile details this phone doesn't have
+      } else {
+        const p = { id: fresh(), name: String(r.name).trim().replace(/\s+/g, " "), ...field(r), added: Number.isFinite(r.added) ? r.added : Date.now() };
+        roster.push(p); byName.set(key(p.name), p); map.set(r.id, p.id); addedPlayers++;
+      }
+    }
+    // A player who is in the file's sessions but no longer on its player list keeps the sessions, under a number nobody here uses.
+    for (const id of Roster.idsInUse(file.history, null)) if (!map.has(id)) map.set(id, fresh());
+    const remap = evs => evs.map(e => (e.t === "add" && e.rid != null ? { ...e, rid: map.get(e.rid) } : e));
+    const edits = h => h.events.length + (h.voided || []).length;
+    const history = local.history.map(h => ({ ...h }));
+    const at = new Map(history.map((h, i) => [h.id, i]));
+    let addedSessions = 0, updatedSessions = 0, sameSessions = 0, badSessions = 0;
+    for (const h of file.history) {
+      const entry = { ...h, events: remap(h.events), voided: remap(h.voided || []) };
+      if (!Ledger.valid(entry.events, entry.voided)) { badSessions++; continue; }
+      if (at.has(h.id)) {
+        const i = at.get(h.id);
+        if (edits(entry) > edits(history[i])) { history[i] = entry; updatedSessions++; } else sameSessions++;
+      } else { at.set(h.id, history.length); history.push(entry); addedSessions++; }
+    }
+    history.sort((a, b) => b.id - a.id);
+    const dropped = Math.max(0, history.length - maxHistory);
+    return { roster, history: history.slice(0, maxHistory), session: local.session, chips: local.chips,
+      addedPlayers, addedSessions, updatedSessions, sameSessions, badSessions, dropped, skippedLive: !!(file.session && file.session.events.length) };
+  },
+  /** "Added 3 past sessions and 2 players." */
+  mergeSummary(m) {
+    const n = (k, w) => `${k} ${w}${k === 1 ? "" : "s"}`, bits = [];
+    if (m.addedSessions) bits.push(n(m.addedSessions, "past session"));
+    if (m.addedPlayers) bits.push(n(m.addedPlayers, "player"));
+    let s = bits.length ? `Added ${bits.join(" and ")}.` : m.updatedSessions ? "" : "Nothing new. Everything in that file is already on this phone.";
+    if (m.updatedSessions) s += `${s ? " " : ""}Updated ${n(m.updatedSessions, "past session")}.`;
+    if (m.dropped) s += ` The oldest ${n(m.dropped, "session")} didn't fit (1,000 max).`;
+    if (m.skippedLive) s += " The file's game in progress wasn't added.";
+    return s;
+  },
   /** "12 players · 34 past sessions · a session in progress" */
   describe({ roster, history, session }) {
     const n = (k, w) => `${k} ${w}${k === 1 ? "" : "s"}`;
@@ -1651,6 +1713,14 @@ function applyImport(data) {
   ledger = new Ledger(); mode = "real"; closedId = null; reportFrom = "table"; eg = null; viewRid = null; homeNotice = null;
   closeDialog(); go("home");
   toast(ok.every(Boolean) ? `Imported ${DataFile.describe(data)}.` : "Imported, but this browser is out of storage space, so it may not be kept after you close the page.");
+}
+
+function applyMerge(data) {
+  const m = DataFile.merge(localData(), data);
+  const ok = [store.set(RKEY, m.roster), store.set(HKEY, m.history)];
+  ledger = new Ledger(); mode = "real"; closedId = null; reportFrom = "table"; eg = null; viewRid = null; homeNotice = null;
+  closeDialog(); go("home");
+  toast(ok.every(Boolean) ? DataFile.mergeSummary(m) : "Merged, but this browser is out of storage space, so it may not be kept after you close the page.");
 }
 
 /** Share a text message (group chat etc.): native share sheet when there is one, otherwise copy it. */
@@ -2361,11 +2431,14 @@ function drawDialog() {
     <textarea id="f-paste" class="import-paste" placeholder='{"app":"Poker Bank", ...}'></textarea>
     <p class="err" id="f-err"></p>
     <div class="actions"><button class="btn" data-x="cancel">Cancel</button><button class="btn primary" data-x="import-paste">Import</button></div>`;
-  if (d.k === "import-confirm") body = `<h2>Replace this phone's data?</h2>
+  if (d.k === "import-confirm") body = `<h2>Import Data</h2>
     <p class="sub"><b>On this phone now:</b> ${esc(DataFile.describe(localData()))}.</p>
     <p class="sub"><b>In the file${d.data.exportedAt ? ` (exported ${esc(Report.date(d.data.exportedAt))}, ${esc(Report.time(d.data.exportedAt))})` : ""}:</b> ${esc(DataFile.describe(d.data))}.</p>
-    <p class="warn">Everything on this phone is replaced by the file. Export this phone's data first if you want to keep a copy.</p>
-    <div class="actions"><button class="btn" data-x="cancel">Cancel</button><button class="btn danger" data-x="import-apply">Replace My Data</button></div>`;
+    <div class="import-choice">
+      <button class="btn primary" data-x="import-merge">Merge</button><span>Keeps this phone's data and adds the file's</span>
+      <button class="btn danger" data-x="import-apply">Replace</button><span>Swaps this phone's data for the file's</span>
+    </div>
+    <div class="actions"><button class="btn" data-x="cancel">Cancel</button></div>`;
   if (d.k === "copytext") body = `<h2>${esc(d.title || "Copy report")}</h2><p class="sub">Your browser blocked automatic copying. ${d.title ? "The data is" : "The report is"} selected below; copy it with your device's copy command.</p>
     <textarea id="copybox" readonly class="copybox">${esc(d.text)}</textarea>
     <div class="actions"><button class="btn primary" data-x="cancel">Done</button></div>`;
@@ -2990,6 +3063,7 @@ document.addEventListener("click", e => {
     case "export-copy": return copyExport();
     case "import-paste": { const t = $("#f-paste").value; if (!t.trim()) { $("#f-err").textContent = "Choose a file, or paste the copied data."; return; } return startImport(t); }
     case "import-apply": return applyImport(d.data);
+    case "import-merge": return applyMerge(d.data);
     case "curtis-more-now": { if (!d.done) return; let pick = 0; const err = act(() => { pick = ledger.spinCurtis(true); }); if (err) { closeDialog(); return toast(err); } return openDialog({ k: "curtis-wheel", pick, done: false, from: d.rotation }); }
     case "curtis-more": { let pick = 0; const err = act(() => { pick = ledger.spinCurtis(true); }); if (err) { closeDialog(); return toast(err); } return openDialog({ k: "curtis-wheel", pick, done: false }); }
     case "curtis-yes": { let pick = 0; const err = act(() => { pick = ledger.spinCurtis(); }); if (err) { closeDialog(); return toast(err); } return openDialog({ k: "curtis-wheel", pick, done: false }); }
