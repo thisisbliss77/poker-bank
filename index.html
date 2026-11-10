@@ -583,6 +583,196 @@ button.pcard { cursor: pointer; } button.pcard.on { outline: 3px solid var(--bra
 .chip-btn.dragging { opacity: .3; }
 .chip-btn.drop-target { box-shadow: 0 0 0 3px var(--brass); }
 .chip-btn.drag-ghost small { display: none; }
+/* ===== hidden blackjack table ===== */
+#bj:empty { display: none; }
+.bj { position: fixed; inset: 0; z-index: 55; overflow-y: auto; overscroll-behavior: contain; color: #f3efe4;
+  background: radial-gradient(120% 70% at 50% 0%, #3a2a1c 0%, #1a120c 55%, #0b0806 100%); display: grid; grid-template-rows: auto 1fr auto;
+  padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px); }
+.bj-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px 0; }
+.bj-top-r { display: flex; align-items: center; gap: 8px; } .bj-snd { display: grid; place-items: center; } .bj-snd[aria-pressed="false"] { opacity: .55; }
+.bj-top .ghost { color: #f3efe4; border-color: rgba(243,239,228,.25); }
+.bj-x { width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(243,239,228,.25); background: rgba(0,0,0,.25); color: #f3efe4; font-size: 22px; line-height: 1; padding: 0; }
+.bj-scene { position: relative; display: grid; justify-items: center; align-content: start; padding: 4px 8px 0; min-height: 0; }
+.bj-dealer { position: relative; z-index: 0; width: 210px; height: 150px; margin-bottom: -62px; pointer-events: none; filter: drop-shadow(0 6px 10px rgba(0,0,0,.6)); }
+.bj-dealer svg { width: 100%; height: 100%; display: block; }
+.bj-persp { width: min(100%, 720px); perspective: 900px; perspective-origin: 50% 100%; position: relative; z-index: 1; }
+.bj-felt { position: relative; height: clamp(240px, min(108vw, calc(100dvh - 400px)), 540px); transform: rotateX(26deg); transform-origin: 50% 100%; margin-top: -34px;
+  border-radius: 0 0 50% 50% / 0 0 64% 64%; border: 14px solid #4a2c17; border-top-width: 10px;
+  background: radial-gradient(90% 80% at 50% 10%, #1a7a4c 0%, #0f5a37 55%, #0a3f27 100%);
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.05), inset 0 -30px 60px rgba(0,0,0,.35), 0 22px 40px rgba(0,0,0,.55); }
+.bj-print { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.bj-print text { font-family: var(--f-display); font-weight: 700; letter-spacing: .12em; }
+.bj-dcards { position: absolute; left: 50%; top: 7%; max-width: 78%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.bj-shoe { position: absolute; right: 7%; top: 4%; width: 46px; height: 34px; border-radius: 5px; background: linear-gradient(#2b1c12, #120b07); border: 1px solid #000;
+  box-shadow: 0 4px 8px rgba(0,0,0,.5); transform: rotate(-12deg); }
+.bj-shoe::after { content: ""; position: absolute; left: 6px; right: 10px; top: 5px; bottom: 9px; border-radius: 3px; background: repeating-linear-gradient(45deg, #8b1d2c 0 3px, #b0263a 3px 6px); border: 1px solid #f3efe4; }
+.bj-row { display: flex; align-items: flex-end; }
+.bjc { --w: 40px; width: var(--w); height: calc(var(--w) * 1.4); border-radius: calc(var(--w) * .12); background: #fbf8f1; color: #141414; border: 1px solid #c9c2b3;
+  box-shadow: -1px 2px 4px rgba(0,0,0,.4); flex: none; position: relative; font-family: var(--f-display); font-weight: 700; line-height: 1; overflow: hidden; }
+.bjc + .bjc { margin-left: calc(var(--w) * -.42); }
+.bjc .ix { position: absolute; left: calc(var(--w) * .07); top: calc(var(--w) * .06); display: flex; flex-direction: column; align-items: center; gap: 0; }
+.bjc .ix b { font-size: calc(var(--w) * .34); letter-spacing: -.04em; } .bjc .ix i { font-style: normal; font-size: calc(var(--w) * .3); margin-top: calc(var(--w) * -.02); }
+.bjc .pip { position: absolute; right: calc(var(--w) * .1); bottom: calc(var(--w) * .08); font-size: calc(var(--w) * .5); }
+.bjc.red { color: #c62828; }
+.bj-row.many .bjc + .bjc { margin-left: calc(var(--w) * -.6); }
+.bjc.back { background: repeating-linear-gradient(45deg, #8b1d2c 0 4px, #b0263a 4px 8px); border: 2px solid #fbf8f1; }
+.bjc.deal { animation: bjDeal .38s cubic-bezier(.2,.8,.3,1) both; }
+.bjc.flip { animation: bjFlip .45s ease both; }
+@keyframes bjDeal { from { transform: translate(120px, -160px) rotate(-25deg); opacity: 0; } }
+@keyframes bjFlip { 0% { transform: rotateY(90deg); } 100% { transform: rotateY(0); } }
+.bj-tot { font-family: var(--f-display); font-weight: 700; font-size: 13px; background: rgba(0,0,0,.55); color: #fff; border-radius: 999px; padding: 1px 8px; min-width: 28px; text-align: center; }
+.bj-tot.bust { background: #8b1d2c; } .bj-tot.bj21 { background: #b8860b; color: #1b1400; }
+.bj-seat { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: 0; padding: 0; color: inherit; font: inherit; }
+.bj-seat.from-bottom { transform: translate(-50%, -100%); }
+.bj-seat.from-bottom .bj-hand { display: grid; grid-template-columns: auto auto; align-items: center; justify-items: center; column-gap: 4px; }
+.bj-seat.from-bottom .bj-hand .bj-res { grid-column: 1 / -1; }
+.bj-seat.xl .bjc { --w: 58px; } .bj-seat.xl .bj-spot { width: 66px; height: 40px; } .bj-seat.xl .bj-tot { font-size: 15px; } .bj-seat.xl .bj-name { font-size: 13px; max-width: 110px; }
+.bj-dcards > .bj-row .bjc { --w: var(--dw, 40px); }
+.rail-total { display: flex; align-items: baseline; justify-content: center; gap: 8px; margin: -2px 0 -4px; }
+.rail-total b { font-family: var(--f-display); font-size: 26px; font-weight: 700; color: #f2c94c; line-height: 1.1; } .rail-total span { font-size: 13px; color: #d6cbb5; }
+@media (max-width: 380px) { .uth-pays { left: 4%; padding: 3px 6px !important; } .uth-pays b { font-size: 10px !important; letter-spacing: .04em !important; } }
+.uth-pays { padding: 5px 9px; } .uth-pays b { font-family: var(--f-display); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: #ffd85a; text-shadow: 0 0 6px rgba(255,200,60,.5); }
+.bj-seat.lg .bjc { --w: 44px; } .bj-seat.md .bjc { --w: 34px; } .bj-seat.sm .bjc { --w: 25px; }
+.bj-seat.sm .bj-spot { width: 36px; height: 24px; } .bj-seat.sm .bj-name { max-width: 56px; font-size: 10px; } .bj-seat.sm .bj-tot { font-size: 11px; padding: 0 6px; min-width: 22px; }
+.bj-seat.sm .bj-hands { gap: 3px; } .bj-seat.sm .bj-res { font-size: 9px; padding: 0 4px; }
+.bj-hands { display: flex; gap: 6px; align-items: flex-end; }
+.bj-hand { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 2px; border-radius: 8px; }
+.bj-hand.now { box-shadow: 0 0 0 2px #f2c94c, 0 0 14px rgba(242,201,76,.6); }
+.bj-res { font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; border-radius: 999px; padding: 1px 6px; }
+.bj-res.win, .bj-res.blackjack { background: #2e7d32; color: #fff; } .bj-res.blackjack { background: #b8860b; color: #1b1400; }
+.bj-res.lose, .bj-res.bust { background: #5a1a22; color: #f3d6da; } .bj-res.push { background: #44515a; color: #fff; }
+.bj-spot { width: 46px; height: 30px; border-radius: 50%; border: 2px solid rgba(243,239,228,.55); display: grid; place-items: center; position: relative; }
+.bj-seat.lg .bj-spot { width: 56px; height: 34px; }
+.bj-spot svg { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); overflow: visible; }
+.bj-name { font-size: 11px; font-weight: 600; max-width: 76px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 3px;
+  background: rgba(0,0,0,.45); border-radius: 999px; padding: 1px 7px 1px 2px; }
+.bj-name .av { width: 16px; height: 16px; font-size: 8px; border-width: 1px; }
+.bj-seat.sel .bj-name { background: #f2c94c; color: #1b1400; }
+.bj-pot { position: absolute; left: 6%; top: 3%; display: grid; justify-items: center; padding: 3px 8px 4px; border-radius: 6px; background: #120a05; border: 1px solid #b8860b;
+  box-shadow: 0 0 10px rgba(242,201,76,.35), inset 0 0 6px rgba(242,201,76,.25); line-height: 1.05; }
+.bj-pot small { font-size: 8px; letter-spacing: .18em; text-transform: uppercase; color: #d6b45a; } .bj-pot b { font-family: var(--f-mono, monospace); color: #ffd85a; font-size: 13px; text-shadow: 0 0 6px rgba(255,200,60,.6); }
+.bj-mark { position: absolute; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 7px; font-weight: 700; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; line-height: 1;
+  background: #3d2a6b; color: #fff; border: 1.5px solid #e8dcff; } .bj-mark.tt { right: calc(100% + 3px); } .bj-mark.jp { left: calc(100% + 3px); background: #8a6a12; border-color: #ffe08a; font-size: 9px; }
+.bj-mark.won { box-shadow: 0 0 0 2px #7bd88f, 0 0 10px #7bd88f; } .bj-mark.lost { opacity: .25; }
+.bj-sides { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; }
+.bj-side { display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,.25); border: 1px solid rgba(243,239,228,.18); border-radius: 999px; padding: 2px 3px 2px 12px; }
+.bj-jpbtn { padding: 5px 12px; }
+.bj-side span { font-weight: 700; font-size: 13px; } .bj-side b { min-width: 30px; text-align: center; font-size: 14px; } .bj-side .step { width: 28px; height: 28px; }
+.bj-rail.betting { gap: 8px; } .bj-rail.betting .bj-chip, .bj-rail.betting .bj-chip .chip { width: 46px; height: 46px; }
+.bj-jpbtn { border-radius: 999px; color: #f3efe4; border-color: rgba(243,239,228,.25); } .bj-jpbtn[aria-pressed="true"] { background: #8a6a12; border-color: #ffe08a; color: #fff; }
+.bj-ins { position: absolute; left: 50%; top: 30%; transform: translate(-50%, -50%); font-size: 11px; }
+.bj-rail { position: sticky; bottom: 0; z-index: 3; background: linear-gradient(#2a1a10, #170e08); border-top: 3px solid #4a2c17; box-shadow: 0 -10px 30px rgba(0,0,0,.5);
+  padding: 10px 14px calc(12px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 10px; }
+.bj-who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.bj-who .av { width: 34px; height: 34px; font-size: 14px; }
+.bj-who > div { display: grid; min-width: 0; } .bj-who b { font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bj-who small { color: #d6cbb5; font-size: 13px; }
+.bj-who .bj-net { margin-left: auto; font-family: var(--f-display); font-weight: 700; font-size: 18px; }
+.bj-who small.up { color: #7bd88f; } .bj-who small.down { color: #ff8a8a; }
+.bj-break { display: flex; flex-wrap: wrap; gap: 5px 6px; justify-content: center; min-height: 46px; align-content: center; }
+.bj-break span { font-size: 12px; font-weight: 600; background: rgba(0,0,0,.3); border: 1px solid rgba(243,239,228,.15); border-radius: 999px; padding: 2px 8px; color: #d6cbb5; white-space: nowrap; }
+.bj-break span.up { color: #7bd88f; border-color: rgba(123,216,143,.35); } .bj-break span.down { color: #ff8a8a; border-color: rgba(255,138,138,.3); }
+.bj-stack { display: flex; justify-content: center; align-items: flex-end; min-height: 0; overflow: hidden; }
+.bj-stack svg { max-height: 72px; width: auto; } .bj-rail.betting .bj-stack svg { max-height: 46px; }
+.bj-stack svg { max-width: 100%; height: auto; }
+.bj-chips { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.bj-chip { width: 50px; height: 50px; border-radius: 50%; padding: 0; border: 0; background: none; }
+.bj-chip .chip { width: 50px; height: 50px; } .bj-chip .chip b { font-size: 14px; }
+.bj-chip:disabled { opacity: .3; }
+.bj-acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.bj-acts .btn { flex: 1 1 0; min-width: 72px; }
+.bj-acts .btn.hint { box-shadow: 0 0 0 3px #f2c94c, 0 0 16px rgba(242,201,76,.7); }
+.bj-sub { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.bj-sub .ghost { color: #d6cbb5; border-color: rgba(243,239,228,.2); font-size: 13px; }
+.bj-msg { text-align: center; font-weight: 600; min-height: 20px; color: #f2c94c; }
+.bj-pick { max-width: 460px; width: 100%; margin: 0 auto; padding: 24px 16px; display: grid; gap: 14px; align-content: start; }
+.bj-pick h2 { margin: 0; font-family: var(--f-display); font-size: 30px; }
+.bj-amt .bj-bank { margin: -6px 0 0; color: #d6cbb5; } .bj-amt .bj-bank b { color: #f3efe4; font-family: var(--f-display); font-size: 20px; margin-left: 6px; }
+.bj-amt .field label { color: #d6cbb5; } .bj-amt .input { background: rgba(0,0,0,.35); border-color: rgba(243,239,228,.25); } .bj-amt .input input { color: #f3efe4; }
+.bj-amt .quick { color: #f3efe4; border-color: rgba(243,239,228,.3); padding: 6px 14px; font-size: 14px; }
+.bj-plist { display: grid; gap: 8px; }
+.bj-plist button { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: rgba(0,0,0,.3); border: 1px solid rgba(243,239,228,.18); border-radius: 14px; padding: 10px 14px; color: inherit; font: inherit; }
+.bj-plist button span:not(.av) { flex: 1; font-weight: 600; font-size: 17px; } .bj-plist button small { color: #d6cbb5; font-family: var(--f-display); font-size: 16px; }
+.bj-board ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.bj-board li { display: grid; grid-template-columns: 30px auto minmax(0, 1fr) auto; align-items: center; gap: 10px; background: rgba(0,0,0,.3); border: 1px solid rgba(243,239,228,.15); border-radius: 12px; padding: 8px 12px; }
+.bj-board li > div { display: grid; min-width: 0; } .bj-board li b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .bj-board li small { color: #d6cbb5; font-size: 12px; }
+.bj-board .rk { font-family: var(--f-display); font-weight: 700; color: #f2c94c; text-align: center; }
+.bj-board .amt { font-family: var(--f-display); font-weight: 700; font-size: 20px; }
+@media (max-height: 760px) { .bj-stack { min-height: 0; } .bj-stack svg { max-height: 54px; width: auto; } .bj-rail { gap: 7px; padding-top: 8px; } .bj-dealer { width: 170px; height: 122px; margin-bottom: -52px; } }
+@media (max-height: 700px) {   /* short phones: everything still fits above the rail */
+  .bj-rail.betting .bj-stack { display: none; } .bj-rail.betting .bj-chip, .bj-rail.betting .bj-chip .chip { width: 40px; height: 40px; } .bj-rail.betting .bj-chip .chip b { font-size: 12px; }
+  .bj-rail .bj-acts .btn { padding-block: 9px; } .bj-rail { gap: 6px; padding-top: 6px; } .bj-sub .ghost { padding-block: 4px; }
+  .bj-dealer { width: 140px; height: 100px; margin-bottom: -42px; } .bj-top { padding-top: 6px; } }
+@media (max-width: 380px) { .bj-chip, .bj-chip .chip { width: 44px; height: 44px; } .bj-acts .btn { min-width: 62px; padding-inline: 8px; } }
+h1.home-title, header.top h1 { -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+#bj:not(:empty) ~ #toast .toast { bottom: auto; top: calc(62px + env(safe-area-inset-top, 0px)); z-index: 60; }
+.bj-modal { position: fixed; inset: 0; z-index: 58; background: rgba(5,3,2,.7); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.bj-sheet { width: 100%; max-width: 380px; background: linear-gradient(#2a1a10, #1a100a); border: 1px solid #6b4a2a; border-radius: 16px; padding: 18px; color: #f3efe4; display: grid; gap: 10px; box-shadow: 0 20px 50px rgba(0,0,0,.6); }
+.bj-sheet h2 { margin: 0; font-family: var(--f-display); font-size: 24px; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; } .bj-sheet h2 span { color: #ffd85a; font-size: 20px; }
+.bj-sheet p { margin: 0; font-size: 14px; color: #d6cbb5; line-height: 1.4; } .bj-sheet .bj-fine { font-size: 12px; color: #a99c84; }
+.bj-pay { width: 100%; border-collapse: collapse; } .bj-pay td { padding: 7px 4px; border-bottom: 1px solid rgba(243,239,228,.1); font-size: 15px; text-align: left; white-space: normal; }
+.bj-pay td.num { text-align: right; font-weight: 700; color: #f2c94c; white-space: nowrap; } .bj-sheet .actions { justify-content: flex-end; }
+.bj-mark, .bj-pot, .bj-side span[role="button"] { cursor: pointer; }
+.bj-mark::after { content: ""; position: absolute; inset: -9px; }   /* a bigger tap target than the marker itself */
+.bj-side span[role="button"] { text-decoration: underline dotted rgba(243,239,228,.4); text-underline-offset: 3px; }
+.bj-scene.uth-scene { min-height: auto; padding-bottom: 8px; }
+.bj-felt.uth-felt { height: clamp(300px, min(108vw, calc(100dvh - 360px)), 560px); }
+@media (max-width: 400px) { .bj-sides { gap: 6px; } .bj-side { padding-left: 8px; gap: 3px; } .bj-side span { font-size: 12px; } .bj-side b { min-width: 24px; font-size: 13px; } .bj-side .step { width: 26px; height: 26px; } }
+.uth-mid { top: 3%; gap: 4px; pointer-events: none; } .uth-drow { position: relative; display: flex; align-items: center; min-height: 42px; } .uth-drow .bj-tot { position: absolute; left: calc(100% + 6px); top: 50%; transform: translateY(-50%); white-space: nowrap; } .uth-seat.from-bottom .bj-hand { display: flex; flex-direction: column; } .uth-dealer .bjc { --w: var(--dw, 30px); } .uth-board { display: flex; gap: 4px; } .uth-board .bjc { --w: var(--bw, 34px); } .uth-board .bjc + .bjc { margin-left: 0; }
+.bj-tot.nq { background: #44515a; }
+.uth-spots { display: grid; justify-items: start; gap: 2px; }   /* Play sits under the Ante */ .uth-row { position: relative; display: flex; gap: 3px; }
+.uth-c { --cw: 34px; width: var(--cw); height: calc(var(--cw) * .66); border-radius: 50%; border: 1.5px solid rgba(243,239,228,.5); position: relative; display: grid; place-items: center; }
+.uth-seat.xl .uth-c { --cw: 42px; } .uth-seat.md .uth-c { --cw: 30px; } .uth-seat.sm .uth-c { --cw: 25px; }
+.uth-c i { font-style: normal; font-size: 6.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: rgba(243,239,228,.55); }
+.uth-c.play { border-color: rgba(242,201,76,.65); } .uth-c.play i { color: rgba(242,201,76,.75); }
+.uth-c svg { position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); overflow: visible; }
+.uth-c.won { box-shadow: 0 0 0 2px #7bd88f; } .uth-c.lost { opacity: .45; } .uth-c.push { box-shadow: 0 0 0 2px #8fa3b0; }
+.uth-sides > span { width: var(--cw, 34px); display: flex; justify-content: center; } .uth-seat.xl .uth-sides > span { --cw: 42px; } .uth-seat.md .uth-sides > span { --cw: 30px; } .uth-seat.sm .uth-sides > span { --cw: 25px; }
+.uth-sides .bj-mark.open { background: transparent; border-style: dashed; border-color: rgba(243,239,228,.4); color: rgba(243,239,228,.55); }
+.uth-sides .bj-mark { position: relative; top: auto; left: auto; right: auto; transform: none; } .uth-sides .bj-mark.jp { font-size: 7px; } .bj-hand.folded .bjc { filter: brightness(.55); }
+.uth-seat .bj-tot { font-size: 10px; padding: 0 6px; white-space: nowrap; } .bj-acts .btn small { font-weight: 500; opacity: .8; font-size: 12px; }
+.curtis-board h3, .report-head h2 { -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+.bj-say { position: absolute; z-index: 4; left: calc(50% + 44px); right: 10px; top: 8px; max-width: 220px; background: #fbf8f1; color: #1b1410; border-radius: 14px; padding: 8px 11px;
+  font-size: 13.5px; font-weight: 600; line-height: 1.3; box-shadow: 0 8px 20px rgba(0,0,0,.45); }
+.bj-say::before { content: ""; position: absolute; left: -9px; top: 18px; border: 6px solid transparent; border-right: 10px solid #fbf8f1; border-left: 0; }
+.bj-say.pop { animation: bjSay .32s cubic-bezier(.2,1.4,.4,1) both; transform-origin: 0 30px; }
+@keyframes bjSay { from { transform: scale(.4); opacity: 0; } }
+@media (max-width: 380px) { .bj-say { left: calc(50% + 34px); font-size: 12.5px; } }
+.bj-ritual { position: fixed; inset: 0; z-index: 57; background: radial-gradient(60% 50% at 50% 45%, rgba(20,12,8,.55), rgba(5,3,2,.88)); display: grid; place-content: center; justify-items: center; gap: 10px; animation: bjFade 3.2s ease both; }
+.bj-ritual p { order: 1; margin: 6px 0 0; color: #f2c94c; font-family: var(--f-display); font-weight: 700; letter-spacing: .25em; text-transform: uppercase; font-size: 14px; }
+.bj-ritual-stage { display: flex; gap: 6px; perspective: 700px; }
+.bj-hand3d { width: 110px; height: 165px; position: relative; transform-style: preserve-3d; animation: bjClearR 3.2s ease-in-out both; }
+.bj-hand3d.left { animation-name: bjClearL; }
+/* dealer's view: backs of the hands with thumbs in; turned over, the palms show with thumbs out (like looking at your own hands) */
+.bj-hand3d .face svg { transform: scaleY(-1); }   /* fingers pointing down, toward the players */
+.bj-hand3d.right .face.front svg, .bj-hand3d.left .face.back svg { transform: scale(-1, -1); }
+.bj-hand3d .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; } .bj-hand3d .face svg { width: 100%; height: 100%; display: block; }
+.bj-hand3d .back { transform: rotateY(180deg); }
+/* in from the dealer's side, palms down (backs showing), turned palms up for the cameras, palms down again, a clap, then back to the dealer */
+@keyframes bjClearL { 0% { transform: translate(-30px, -130px) rotate(8deg); } 16% { transform: translate(-30px, 0) rotate(8deg) rotateY(0); } 34% { transform: translate(-30px, 0) rotate(8deg) rotateY(180deg); }
+  52% { transform: translate(-30px, 0) rotate(8deg) rotateY(360deg); } 64% { transform: translate(28px, -4px) rotate(0) rotateY(360deg); } 72% { transform: translate(-36px, 0) rotate(10deg) rotateY(360deg); } 100% { transform: translate(-36px, -150px) rotate(10deg) rotateY(360deg); } }
+@keyframes bjClearR { 0% { transform: translate(30px, -130px) rotate(-8deg); } 16% { transform: translate(30px, 0) rotate(-8deg) rotateY(0); } 34% { transform: translate(30px, 0) rotate(-8deg) rotateY(-180deg); }
+  52% { transform: translate(30px, 0) rotate(-8deg) rotateY(-360deg); } 64% { transform: translate(-28px, -4px) rotate(0) rotateY(-360deg); } 72% { transform: translate(36px, 0) rotate(-10deg) rotateY(-360deg); } 100% { transform: translate(36px, -150px) rotate(-10deg) rotateY(-360deg); } }
+@keyframes bjFade { 0% { opacity: 0; } 8%, 88% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .bj-hand3d, .bj-ritual { animation-duration: .01s; } }
+/* the mystery board on the Leaderboard page */
+.lb-layout { display: grid; gap: 18px; }   /* the mystery boards sit below the others */
+.chip-owner { margin: -6px 0 0; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); text-align: center; }
+.pl-chipset .pl-h small { font-size: 16px; color: var(--ink-soft); font-weight: 500; margin-left: 6px; } .pl-chips { margin-bottom: 10px; } .pl-chipset .seat-actions { align-items: center; }
+.pl-chipset .btn.danger-ghost { margin-right: 0; }
+.cs-list { display: grid; gap: 6px; }
+.cs-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; text-align: left; background: var(--seat); border: 1px solid var(--seat-line); border-radius: 12px; padding: 10px 12px; }
+.cs-row[aria-pressed="true"] { border-color: var(--brass); box-shadow: 0 0 0 1px var(--brass); } .cs-row:disabled { opacity: .55; cursor: default; }
+.cs-row b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .cs-row small { color: var(--ink-soft); }
+.cs-mini { display: flex; } .cs-mini i { width: 16px; height: 16px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px var(--e, rgba(255,255,255,.7)) inset, 0 0 0 1px #0008; } .cs-mini i + i { margin-left: -5px; }
+.egg-board h3[data-reset] { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
+.egg-col { display: grid; gap: 14px; align-content: start; }
+.egg-board { background: var(--seat); border: 1px solid var(--seat-line); border-radius: 16px; padding: 14px; display: grid; gap: 10px; }
+.egg-board h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-family: var(--f-display); font-size: 20px; letter-spacing: .2em; color: var(--brass); }
+.egg-board ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.egg-board li { display: grid; grid-template-columns: 22px auto minmax(0, 1fr) auto; align-items: center; gap: 8px; font-size: 14px; }
+.egg-board li .av { width: 26px; height: 26px; font-size: 11px; } .egg-board li b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.egg-board .rk { color: var(--ink-faint); font-family: var(--f-display); } .egg-board .amt { font-family: var(--f-display); font-weight: 600; }
 .import-choice { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px 12px; margin-top: 4px; }
 .import-choice .btn { min-width: 104px; } .import-choice span { font-size: 13px; color: var(--ink-soft); }
 .nuke-list { margin: 0; padding-left: 18px; color: var(--ink-soft); font-size: 14px; display: grid; gap: 2px; }
@@ -596,6 +786,7 @@ button.pcard { cursor: pointer; } button.pcard.on { outline: 3px solid var(--bra
 <div id="app"></div>
 <div id="modal"></div>
 <div id="bomb"></div>
+<div id="bj"></div>
 <div id="toast"></div>
 
 <script>
@@ -1490,13 +1681,44 @@ const ChipSet = {
 };
 ChipSet.apply(DEFAULT_CHIPS);
 /**
+ * Players' own chip sets: { sets: { [rid]: chip set }, owner: rid whose set is in use (null: the plain one), base: the plain set, kept while a player's is in use }.
+ * The set in use is always the one saved under CKEY; a player's copy is kept in step with it.
+ */
+const ChipSets = {
+  clean(raw, rids) {
+    const out = { sets: {}, owner: null, base: null }; if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+    if (raw.sets && typeof raw.sets === "object" && !Array.isArray(raw.sets))
+      for (const [k, v] of Object.entries(raw.sets)) { const rid = Number(k), set = ChipSet.normalize(v); if (Number.isInteger(rid) && rid > 0 && set && (!rids || rids.has(rid))) out.sets[rid] = set; }
+    if (Number.isInteger(raw.owner) && out.sets[raw.owner]) out.owner = raw.owner;
+    out.base = ChipSet.normalize(raw.base);
+    return out;
+  },
+  /** Make rid's set the one in use (null: back to the plain set). current: the set in use now. Returns { cs, set } or null if there's no such set. */
+  use(cs, current, rid) {
+    const next = { sets: { ...cs.sets }, owner: cs.owner, base: cs.base }, cur = ChipSet.normalize(current) || DEFAULT_CHIPS;
+    if (rid != null && !next.sets[rid]) return null;
+    if (next.owner == null) next.base = cur; else next.sets[next.owner] = cur;
+    next.owner = rid == null ? null : rid;
+    return { cs: next, set: rid == null ? next.base || DEFAULT_CHIPS : next.sets[rid] };
+  },
+  /** Save the set in use as rid's (replacing any set they had) and start using it as theirs. */
+  saveAs(cs, current, rid) {
+    const cur = ChipSet.normalize(current) || DEFAULT_CHIPS, next = { sets: { ...cs.sets, [rid]: cur }, owner: rid, base: cs.owner == null ? cur : cs.base };
+    if (cs.owner != null && cs.owner !== rid) next.sets[cs.owner] = cur;
+    return next;
+  },
+};
+/**
  * Export / Import: one file with every player, every past session and the session in progress,
  * so another phone can pick up exactly where this one left off.
  */
 const DataFile = {
   APP: "Poker Bank", FORMAT: 1,
-  make({ roster, history, session, chips }, now = Date.now()) {
-    return JSON.stringify({ app: DataFile.APP, format: DataFile.FORMAT, exportedAt: now, roster: roster || [], history: history || [], session: session || null, chips: ChipSet.normalize(chips) });
+  make({ roster, history, session, chips, blackjack, blackjackPot, chipSets }, now = Date.now()) {
+    const bj = Blackjack.cleanRecords(blackjack), pot = blackjackPot ? Blackjack.cleanPot(blackjackPot) : null, cs = ChipSets.clean(chipSets);
+    return JSON.stringify({ app: DataFile.APP, format: DataFile.FORMAT, exportedAt: now, roster: roster || [], history: history || [], session: session || null, chips: ChipSet.normalize(chips),
+      ...(Object.keys(cs.sets).length ? { chipSets: cs } : {}),
+      ...(Object.keys(bj).length ? { blackjack: bj } : {}), ...(pot && (pot.amount !== Blackjack.PROG_SEED || pot.resets) ? { blackjackPot: pot } : {}) });
   },
   fileName(now = Date.now()) { const d = new Date(now), z = n => String(n).padStart(2, "0"); return `poker-bank-${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}.json`; },
   /** Checks a file completely before anything is replaced. Returns { roster, history, session, exportedAt } or throws a LedgerError. */
@@ -1527,7 +1749,10 @@ const DataFile = {
     if (d.chips != null && !ChipSet.normalize(d.chips)) bad("That export file is damaged (the chip set is invalid).");
     const history = d.history.map(h => ({ ...h, voided: h.voided || [] }));
     const roster = d.roster.map(r => (r.photo != null && !Roster.photo(r) ? (({ photo, ...rest }) => rest)(r) : r));
-    return { roster, history, session, chips: d.chips == null ? null : ChipSet.normalize(d.chips), exportedAt: Number.isFinite(d.exportedAt) ? d.exportedAt : null };
+    const blackjack = Blackjack.cleanRecords(d.blackjack, new Set(roster.map(r => r.id)));
+    const blackjackPot = d.blackjackPot != null ? Blackjack.cleanPot(d.blackjackPot) : null;
+    const chipSets = ChipSets.clean(d.chipSets, new Set(roster.map(r => r.id)));
+    return { roster, history, session, blackjack, blackjackPot, chipSets, chips: d.chips == null ? null : ChipSet.normalize(d.chips), exportedAt: Number.isFinite(d.exportedAt) ? d.exportedAt : null };
   },
   /**
    * Adds a file's past sessions and players to this phone's data, keeping everything already here.
@@ -1567,7 +1792,8 @@ const DataFile = {
     const at = new Map(history.map((h, i) => [h.id, i]));
     let addedSessions = 0, updatedSessions = 0, sameSessions = 0, badSessions = 0;
     for (const h of file.history) {
-      const entry = { ...h, events: remap(h.events), voided: remap(h.voided || []) };
+      const entry = { ...h, events: remap(h.events), voided: remap(h.voided || []) }; delete entry.chipOwner;
+      if (Number.isInteger(h.chipOwner) && map.has(h.chipOwner)) entry.chipOwner = map.get(h.chipOwner);
       if (!Ledger.valid(entry.events, entry.voided)) { badSessions++; continue; }
       if (at.has(h.id)) {
         const i = at.get(h.id);
@@ -1575,8 +1801,14 @@ const DataFile = {
       } else { at.set(h.id, history.length); history.push(entry); addedSessions++; }
     }
     history.sort((a, b) => b.id - a.id);
+    const blackjack = { ...Blackjack.cleanRecords(local.blackjack) };
+    for (const [k, r] of Object.entries(Blackjack.cleanRecords(file.blackjack))) { const id = map.get(Number(k)); if (id != null && (!blackjack[id] || r.updated > blackjack[id].updated)) blackjack[id] = r; }
     const dropped = Math.max(0, history.length - maxHistory);
-    return { roster, history: history.slice(0, maxHistory), session: local.session, chips: local.chips,
+    // players' chip sets: a player with a set on this phone keeps it; the file fills in the rest
+    const lcs = ChipSets.clean(local.chipSets), chipSets = { sets: { ...lcs.sets }, owner: lcs.owner, base: lcs.base };
+    for (const [k, set] of Object.entries(ChipSets.clean(file.chipSets).sets)) { const id = map.get(Number(k)); if (id != null && !chipSets.sets[id]) chipSets.sets[id] = set; }
+    const blackjackPot = file.blackjackPot ? Blackjack.mergePot(local.blackjackPot, file.blackjackPot) : local.blackjackPot ? Blackjack.cleanPot(local.blackjackPot) : null;
+    return { roster, history: history.slice(0, maxHistory), session: local.session, chips: local.chips, blackjack, blackjackPot, chipSets,
       addedPlayers, addedSessions, updatedSessions, sameSessions, badSessions, dropped, skippedLive: !!(file.session && file.session.events.length) };
   },
   /** "Added 3 past sessions and 2 players." */
@@ -1597,10 +1829,587 @@ const DataFile = {
     return [n(roster.length, "player"), n(history.length, "past session"), live ? "a session in progress" : "no session in progress"].join(" · ");
   },
 };
+/**
+ * Blackjack (a hidden extra, kept completely apart from the bank): one table, up to 7 players against the dealer.
+ * Standard Vegas rules: 6-deck shoe, dealer stands on soft 17, blackjack pays 3:2, insurance pays 2:1,
+ * double on any two cards (also after a split), split up to 4 hands, split aces get one card each.
+ * All money is in cents. The table is a plain object so it can be saved and picked up again mid-hand.
+ */
+const Blackjack = {
+  BUYIN: 50000, MIN: 500, MAX: 50000, DECKS: 6, SEATS: 7, MAX_HANDS: 4, CUT: 78,
+  /** Side bets: 21+3 ($1 to $25) and a $1 progressive jackpot (half of every jackpot bet feeds the meter). */
+  SIDE_MIN: 100, SIDE_MAX: 2500, PROG_BET: 100, PROG_FEED: 50, PROG_SEED: 10000,
+  TT_PAYS: { "suited-trips": 100, "straight-flush": 40, trips: 30, straight: 10, flush: 5 },
+  TT_NAMES: { "suited-trips": "Suited Trips", "straight-flush": "Straight Flush", trips: "Three of a Kind", straight: "Straight", flush: "Flush" },
+  /** 21+3: your first two cards and the dealer's up card as a 3-card poker hand. */
+  threeCard(cards) {
+    const ord = c => ({ A: 14, K: 13, Q: 12, J: 11 }[c.r] || Number(c.r));
+    const v = cards.map(ord).sort((a, b) => a - b), suited = cards.every(c => c.s === cards[0].s), trips = v[0] === v[2];
+    const straight = !trips && new Set(v).size === 3 && (v[2] - v[0] === 2 || (v[0] === 2 && v[1] === 3 && v[2] === 14));   // A-2-3 and Q-K-A count, K-A-2 doesn't
+    const hand = trips && suited ? "suited-trips" : straight && suited ? "straight-flush" : trips ? "trips" : straight ? "straight" : suited ? "flush" : null;
+    return hand ? { hand, odds: Blackjack.TT_PAYS[hand] } : null;
+  },
+  /** The progressive: your first two cards and the dealer's up card. pct: share of the meter; amount: fixed prize. */
+  progressive(cards) {
+    const sevens = cards.filter(c => c.r === "7").length;
+    if (sevens === 3) return cards.every(c => c.s === cards[0].s) ? { hand: "jackpot", pct: 100 } : { hand: "sevens", pct: 10 };
+    if (cards[0].r === "7" && cards[1].r === "7") return { hand: "two7s", amount: 2500 };
+    if (cards[0].r === "7") return { hand: "one7", amount: 300 };
+    return null;
+  },
+  PROG_NAMES: { jackpot: "Jackpot!", sevens: "Three 7s", two7s: "Two 7s", one7: "One 7" },
+  cleanPot(raw) {
+    const ok = raw && Number.isInteger(raw.amount) && raw.amount >= 0 && raw.amount <= 1e10;
+    return { amount: ok ? raw.amount : Blackjack.PROG_SEED, resets: ok && Number.isInteger(raw.resets) && raw.resets >= 0 ? raw.resets : 0, updated: ok && Number.isFinite(raw.updated) ? raw.updated : 0 };
+  },
+  /** Two phones' meters: the one that has seen more full jackpots knows about a reset, so it wins; otherwise the bigger meter. */
+  mergePot(a, b) {
+    const x = Blackjack.cleanPot(a), y = Blackjack.cleanPot(b);
+    if (x.resets !== y.resets) return x.resets > y.resets ? x : y;
+    return y.amount > x.amount ? y : x;
+  },
+  RANKS: ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"], SUITS: ["♠", "♥", "♦", "♣"],
+  cardValue: c => (c.r === "A" ? 11 : ["10", "J", "Q", "K"].includes(c.r) ? 10 : Number(c.r)),
+  /** { total, soft, bust, bj } for a hand. soft: an ace still counts as 11. */
+  value(cards, natural = true) {
+    let t = 0, aces = 0;
+    for (const c of cards) { t += Blackjack.cardValue(c); if (c.r === "A") aces++; }
+    while (t > 21 && aces) { t -= 10; aces--; }
+    return { total: t, soft: aces > 0, bust: t > 21, bj: natural && cards.length === 2 && t === 21 };
+  },
+  newShoe(rng, decks = Blackjack.DECKS) {
+    const shoe = [];
+    for (let d = 0; d < decks; d++) for (const s of Blackjack.SUITS) for (const r of Blackjack.RANKS) shoe.push({ r, s });
+    for (let i = shoe.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [shoe[i], shoe[j]] = [shoe[j], shoe[i]]; }
+    return shoe;
+  },
+  newTable(rng) { return { shoe: Blackjack.newShoe(rng), n: 0, seats: [], dealer: [], hole: true, phase: "bet", turn: null, ins: null, round: 0, shuffled: false }; },
+  _draw(t) { const c = t.shoe.pop(); t.n++; return { ...c, n: t.n }; },
+  /** A player sits down with a stack (cents). Only between hands; at most 7, and each player once. */
+  sit(t, rid, stack) {
+    if (t.phase !== "bet" && t.phase !== "done") throw new LedgerError("Wait for this hand to finish.");
+    if (t.seats.length >= Blackjack.SEATS) throw new LedgerError(`The table is full (${Blackjack.SEATS} players).`);
+    if (t.seats.some(x => x.rid === rid)) throw new LedgerError("That player is already at the table.");
+    if (!Number.isInteger(stack) || stack < 0) throw new LedgerError("Bad stack.");
+    t.seats.push({ rid, stack, bet: 0, last: 0, tt: 0, prog: 0, lastTT: 0, lastProg: 0, sides: null, hands: [], insurance: 0, before: stack, net: null });
+    return t.seats.length - 1;
+  },
+  /** Walk away (between hands): returns the stack they leave with. */
+  leave(t, i) {
+    if (t.phase !== "bet" && t.phase !== "done") throw new LedgerError("Finish this hand before walking away.");
+    const s = t.seats[i]; if (!s) throw new LedgerError("Nobody is in that seat.");
+    t.seats.splice(i, 1); return s.stack;
+  },
+  /** Next hand: clear the cards, keep each player's last bet ready if they can still afford it. */
+  newRound(t) {
+    if (t.phase !== "done") return;
+    t.dealer = []; t.hole = true; t.turn = null; t.ins = null; t.phase = "bet"; t.shuffled = false;
+    for (const s of t.seats) { s.hands = []; s.insurance = 0; s.net = null; s.sides = null; Object.assign(s, Blackjack.nextBets(s)); }
+  },
+  /** The bets a seat starts the next hand with: last hand's bets, as long as they still fit in the stack. */
+  nextBets(s) {
+    const bet = s.last && s.last <= Math.min(s.stack, Blackjack.MAX) ? s.last : 0;
+    const tt = bet && bet + (s.lastTT || 0) <= s.stack ? s.lastTT || 0 : 0;
+    const prog = bet && bet + tt + (s.lastProg || 0) <= s.stack ? s.lastProg || 0 : 0;
+    return { bet, tt, prog };
+  },
+  /** The bets a tap would add to: what's on the table now, or (between hands) what the next hand starts with. */
+  betsNow(t, s) { return t.phase === "done" ? Blackjack.nextBets(s) : { bet: s.bet || 0, tt: s.tt || 0, prog: s.prog || 0 }; },
+  setBet(t, i, cents) {
+    if (t.phase !== "bet") throw new LedgerError("Bets are closed.");
+    const s = t.seats[i]; if (!s) throw new LedgerError("Nobody is in that seat.");
+    if (!Number.isInteger(cents) || cents < 0 || cents % Blackjack.MIN) throw new LedgerError("Bets go up in $5 chips.");
+    if (cents > Blackjack.MAX) throw new LedgerError(`The table maximum is ${Money.fmt(Blackjack.MAX)}.`);
+    if (cents + (s.tt || 0) + (s.prog || 0) > s.stack) throw new LedgerError("Not enough chips for that bet.");
+    s.bet = cents;
+  },
+  /** Side bets: kind "tt" (21+3, $1 to $25 in $1 steps, 0 for none) or "prog" (the $1 jackpot bet: 0 or $1). */
+  setSide(t, i, kind, cents) {
+    if (t.phase !== "bet") throw new LedgerError("Bets are closed.");
+    const s = t.seats[i]; if (!s) throw new LedgerError("Nobody is in that seat.");
+    if (kind === "tt") { if (!Number.isInteger(cents) || cents < 0 || cents % 100 || (cents && (cents < Blackjack.SIDE_MIN || cents > Blackjack.SIDE_MAX))) throw new LedgerError("21+3 bets are $1 to $25."); }
+    else if (kind === "prog") { if (cents !== 0 && cents !== Blackjack.PROG_BET) throw new LedgerError("The jackpot bet is $1."); }
+    else throw new LedgerError("Unknown side bet.");
+    if (s.bet + (kind === "tt" ? cents : s.tt || 0) + (kind === "prog" ? cents : s.prog || 0) > s.stack) throw new LedgerError("Not enough chips for that bet.");
+    s[kind] = cents;
+  },
+  /** Take another $100 when the stack can't cover the minimum bet. */
+  rebuy(t, i) {
+    const s = t.seats[i]; if (!s) throw new LedgerError("Nobody is in that seat.");
+    if (t.phase !== "bet") throw new LedgerError("Wait for this hand to finish.");
+    if (s.stack >= Blackjack.MIN) throw new LedgerError("You still have chips to play.");
+    s.stack += Blackjack.BUYIN; return Blackjack.BUYIN;
+  },
+  deal(t, rng, pot = null) {
+    if (t.phase !== "bet") throw new LedgerError("Finish this hand first.");
+    const playing = t.seats.filter(s => s.bet > 0);
+    if (!playing.length) throw new LedgerError(`Place a bet first (${Money.fmt(Blackjack.MIN)} minimum).`);
+    for (const s of playing) if (s.bet < Blackjack.MIN || s.bet + (s.tt || 0) + (s.prog || 0) > s.stack) throw new LedgerError("A bet isn't valid.");
+    if (t.shoe.length < Blackjack.CUT) { t.shoe = Blackjack.newShoe(rng); t.shuffled = true; }
+    t.round++; t.dealer = []; t.hole = true;
+    for (const s of t.seats) {
+      s.before = s.stack; s.insurance = 0; s.net = null; s.hands = []; s.sides = null;
+      if (s.bet > 0) {
+        s.stack -= s.bet + (s.tt || 0) + (s.prog || 0); s.last = s.bet; s.lastTT = s.tt || 0; s.lastProg = s.prog || 0;
+        s.hands = [{ cards: [], bet: s.bet, done: false, doubled: false, split: false, aces: false, result: null, paid: 0 }];
+        if (s.prog && pot) pot.amount += Blackjack.PROG_FEED * (s.prog / Blackjack.PROG_BET);
+      } else { s.tt = 0; s.prog = 0; }
+    }
+    // two passes, one card each, dealer's second card face down
+    for (let k = 0; k < 2; k++) { for (const s of playing) s.hands[0].cards.push(Blackjack._draw(t)); t.dealer.push(Blackjack._draw(t)); }
+    for (const s of playing) if (Blackjack.value(s.hands[0].cards).bj) s.hands[0].done = true;
+    Blackjack._sides(t, pot);
+    const up = t.dealer[0];
+    if (up.r === "A") { t.phase = "insurance"; t.ins = t.seats.findIndex(s => s.hands.length); return; }
+    if (Blackjack.cardValue(up) === 10 && Blackjack.value(t.dealer).bj) return Blackjack._finish(t);   // dealer peeks: blackjack ends it
+    Blackjack._next(t);
+  },
+  /** Side bets are settled as soon as the cards are out (player's two cards + dealer's up card). */
+  _sides(t, pot) {
+    for (const s of t.seats) {
+      if (!s.hands.length || (!s.tt && !s.prog)) continue;
+      const three = [s.hands[0].cards[0], s.hands[0].cards[1], t.dealer[0]], out = {};
+      if (s.tt) { const r = Blackjack.threeCard(three); out.tt = { bet: s.tt, hand: r ? r.hand : null, paid: r ? s.tt * (r.odds + 1) : 0 }; }
+      if (s.prog) {
+        const r = Blackjack.progressive(three); let paid = 0;
+        if (r && r.pct) { const meter = pot ? pot.amount : Blackjack.PROG_SEED; paid = Math.floor(meter * r.pct / 100);
+          if (pot) { pot.amount -= paid; if (r.pct === 100) { pot.amount = Blackjack.PROG_SEED; pot.resets++; } } }
+        else if (r) paid = r.amount;
+        out.prog = { bet: s.prog, hand: r ? r.hand : null, paid };
+        if (pot) pot.updated = Date.now();
+      }
+      s.stack += (out.tt ? out.tt.paid : 0) + (out.prog ? out.prog.paid : 0); s.sides = out;
+    }
+  },
+  /** Insurance with an ace showing: each player in turn takes it (half their bet) or not. */
+  insurance(t, take) {
+    if (t.phase !== "insurance") throw new LedgerError("Insurance isn't offered now.");
+    const s = t.seats[t.ins], cost = Math.floor(s.hands[0].bet / 2);
+    if (take) { if (cost > s.stack) throw new LedgerError("Not enough chips for insurance."); s.stack -= cost; s.insurance = cost; }
+    let k = t.ins + 1; while (k < t.seats.length && !t.seats[k].hands.length) k++;
+    if (k < t.seats.length) { t.ins = k; return; }
+    t.ins = null;
+    if (Blackjack.value(t.dealer).bj) return Blackjack._finish(t);
+    Blackjack._next(t);
+  },
+  /** What the player whose turn it is may do. */
+  options(t) {
+    if (t.phase !== "play" || !t.turn) return [];
+    const s = t.seats[t.turn.seat], h = s.hands[t.turn.hand], two = h.cards.length === 2, out = ["hit", "stand"];
+    if (two && s.stack >= h.bet) out.push("double");
+    if (two && s.stack >= h.bet && s.hands.length < Blackjack.MAX_HANDS && Blackjack.cardValue(h.cards[0]) === Blackjack.cardValue(h.cards[1]) && !(h.aces && h.cards[0].r === "A")) out.push("split");
+    return out;
+  },
+  act(t, move) {
+    if (!Blackjack.options(t).includes(move)) throw new LedgerError("You can't do that now.");
+    const s = t.seats[t.turn.seat], h = s.hands[t.turn.hand];
+    if (move === "hit") { h.cards.push(Blackjack._draw(t)); const v = Blackjack.value(h.cards, false); if (v.total >= 21) h.done = true; }
+    else if (move === "stand") h.done = true;
+    else if (move === "double") { s.stack -= h.bet; h.bet *= 2; h.doubled = true; h.cards.push(Blackjack._draw(t)); h.done = true; }
+    else if (move === "split") {
+      s.stack -= h.bet; const aces = h.cards[0].r === "A";
+      const b = { cards: [h.cards.pop()], bet: h.bet, done: false, doubled: false, split: true, aces, result: null, paid: 0 };
+      h.split = true; h.aces = aces; s.hands.splice(t.turn.hand + 1, 0, b);
+      for (const x of [h, b]) { x.cards.push(Blackjack._draw(t)); if (aces || Blackjack.value(x.cards, false).total === 21) x.done = true; }
+    }
+    Blackjack._next(t);
+  },
+  /** Moves the turn to the next hand still being played, or hands over to the dealer. */
+  _next(t) {
+    for (let i = 0; i < t.seats.length; i++) for (let j = 0; j < t.seats[i].hands.length; j++) if (!t.seats[i].hands[j].done) { t.phase = "play"; t.turn = { seat: i, hand: j }; return; }
+    t.turn = null; t.phase = "dealer"; t.hole = false;
+    // nobody left to beat (all busted or paid blackjack): the dealer doesn't draw
+    if (!t.seats.some(s => s.hands.some(h => !Blackjack.value(h.cards, !h.split).bust && !Blackjack.value(h.cards, !h.split).bj))) Blackjack._finish(t);
+  },
+  /** Dealer draws one card if they must; returns false once they stand (then the hand is settled). */
+  dealerStep(t) {
+    if (t.phase !== "dealer") return false;
+    t.hole = false;
+    if (Blackjack.value(t.dealer).total < 17) { t.dealer.push(Blackjack._draw(t)); return true; }   // stands on all 17s, soft included
+    Blackjack._finish(t); return false;
+  },
+  _finish(t) {
+    t.hole = false; t.turn = null;
+    const d = Blackjack.value(t.dealer);
+    for (const s of t.seats) {
+      if (!s.hands.length) continue;
+      let back = 0;
+      if (s.insurance && d.bj) back += s.insurance * 3;
+      for (const h of s.hands) {
+        const v = Blackjack.value(h.cards, !h.split);
+        if (v.bust) { h.result = "bust"; h.paid = 0; }
+        else if (v.bj && !d.bj) { h.result = "blackjack"; h.paid = h.bet + Math.floor(h.bet * 3 / 2); }
+        else if (d.bj) { h.result = v.bj ? "push" : "lose"; h.paid = v.bj ? h.bet : 0; }
+        else if (d.bust || v.total > d.total) { h.result = "win"; h.paid = h.bet * 2; }
+        else if (v.total === d.total) { h.result = "push"; h.paid = h.bet; }
+        else { h.result = "lose"; h.paid = 0; }
+        back += h.paid;
+      }
+      s.stack += back; s.net = s.stack - s.before;
+    }
+    t.phase = "done";
+  },
+  /** What a player won or lost on each part of the hand: [{ label, amount }], adding up to their net. */
+  breakdown(t, s) {
+    if (!s.hands.length || s.net == null) return [];
+    const out = [], name = { win: "Win", blackjack: "Blackjack", push: "Push", lose: "Lose", bust: "Bust" };
+    s.hands.forEach((h, j) => out.push({ label: `${s.hands.length > 1 ? `Hand ${j + 1} ` : ""}${name[h.result]}${h.doubled ? " (doubled)" : ""}`, amount: h.paid - h.bet }));
+    if (s.insurance) out.push({ label: "Insurance", amount: Blackjack.value(t.dealer).bj ? s.insurance * 2 : -s.insurance });
+    const sd = s.sides || {};
+    if (sd.tt) out.push({ label: `21+3${sd.tt.hand ? " " + Blackjack.TT_NAMES[sd.tt.hand] : ""}`, amount: sd.tt.paid - sd.tt.bet });
+    if (sd.prog) out.push({ label: `Jackpot${sd.prog.hand ? " " + Blackjack.PROG_NAMES[sd.prog.hand].replace("!", "") : ""}`, amount: sd.prog.paid - sd.prog.bet });
+    return out;
+  },
+  /**
+   * Did this move go against basic strategy? null when it's the book move; otherwise what kind of mistake it was,
+   * so the dealer can say something about it: { kind, total, up, rank, book }.
+   */
+  offBook(t, move) {
+    const book = Blackjack.hint(t); if (!book || move === book) return null;
+    const h = t.seats[t.turn.seat].hands[t.turn.hand], v = Blackjack.value(h.cards, false), upc = t.dealer[0];
+    const up = upc.r === "A" ? "ace" : ["J", "Q", "K"].includes(upc.r) ? "10" : upc.r, rank = h.cards[0].r, ten = Blackjack.cardValue(h.cards[0]) === 10;
+    const info = (kind) => ({ kind, total: v.total, up, rank: ten ? "10" : rank === "A" ? "ace" : rank, book });
+    if (move === "split") return info(ten ? "split10" : "splitBad");
+    if (book === "split") return info(rank === "A" || rank === "8" ? "noSplitAE" : "noSplit");
+    if (move === "double") return info("dblBad");
+    if (book === "double") return info("noDouble");
+    if (move === "hit") return info(v.total >= 17 && !v.soft ? "hit17" : "hitBad");
+    return info("standBad");
+  },
+  /** Basic strategy for these rules (6 decks, dealer stands on soft 17, double after split): "hit" | "stand" | "double" | "split". */
+  hint(t) {
+    const opts = Blackjack.options(t); if (!opts.length) return null;
+    const h = t.seats[t.turn.seat].hands[t.turn.hand], up = Blackjack.cardValue(t.dealer[0]) === 11 ? 11 : Blackjack.cardValue(t.dealer[0]);
+    const v = Blackjack.value(h.cards, false), can = m => opts.includes(m), dbl = alt => (can("double") ? "double" : alt);
+    if (can("split")) {
+      const r = Blackjack.cardValue(h.cards[0]);
+      const sp = { 11: true, 8: true, 10: false, 9: ![7, 10, 11].includes(up), 7: up <= 7, 6: up <= 6, 4: up === 5 || up === 6, 3: up <= 7, 2: up <= 7, 5: false }[r];
+      if (sp) return "split";
+    }
+    if (v.soft && v.total <= 21 && h.cards.length >= 2) {
+      const tot = v.total;
+      if (tot >= 20) return "stand";
+      if (tot === 19) return up === 6 ? dbl("stand") : "stand";
+      if (tot === 18) return up >= 2 && up <= 6 ? dbl("stand") : up <= 8 ? "stand" : "hit";
+      if (tot === 17) return up >= 3 && up <= 6 ? dbl("hit") : "hit";
+      if (tot === 15 || tot === 16) return up >= 4 && up <= 6 ? dbl("hit") : "hit";
+      if (tot === 13 || tot === 14) return up >= 5 && up <= 6 ? dbl("hit") : "hit";
+      return "hit";
+    }
+    const tot = v.total;
+    if (tot >= 17) return "stand";
+    if (tot >= 13) return up <= 6 ? "stand" : "hit";
+    if (tot === 12) return up >= 4 && up <= 6 ? "stand" : "hit";
+    if (tot === 11) return dbl("hit");
+    if (tot === 10) return up <= 9 ? dbl("hit") : "hit";
+    if (tot === 9) return up >= 3 && up <= 6 ? dbl("hit") : "hit";
+    return "hit";
+  },
+  /**
+   * Saved player records, shared by the hidden games: one bankroll per player (stack, and every $100 taken in bought),
+   * plus each game's own tally of chips won and lost: { [rid]: { stack, bought, updated, bj: {...}, uth: {...} } }.
+   * Older blackjack-only records (tallies at the top level) are moved under bj. Anything damaged is dropped.
+   */
+  GAME_FIELDS: { bj: ["hands", "wins", "losses", "pushes", "bjs", "jackpots", "moves", "book", "hints"], uth: ["hands", "wins", "losses", "pushes", "folds", "royals", "moves", "book", "hints"] },   // moves/book: decisions made, and how many matched the book; hints: taps on Hint
+  cleanRecords(raw, rids) {
+    const out = {}; if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+    const n = (v, max = 1e12) => Number.isInteger(v) && v >= 0 && v <= max, int = v => Number.isInteger(v) && Math.abs(v) <= 1e12;
+    const tally = (g, src) => { if (!src || typeof src !== "object") return null; const t = { net: int(src.net) ? src.net : 0, best: int(src.best) ? src.best : 0 };
+      for (const f of Blackjack.GAME_FIELDS[g]) t[f] = n(src[f]) ? src[f] : 0; return t; };
+    for (const [k, r] of Object.entries(raw)) {
+      const rid = Number(k); if (!Number.isInteger(rid) || rid < 1 || (rids && !rids.has(rid)) || !r || typeof r !== "object") continue;
+      if (!n(r.stack) || !n(r.bought) || r.bought < 10000) continue;   // the first buy-in was $100 in older records
+      const legacy = r.bj == null && r.uth == null && r.hands != null;   // a blackjack-only record from before the shared bankroll
+      const rec = { stack: r.stack, bought: r.bought, updated: Number.isFinite(r.updated) ? r.updated : 0 };
+      const bj = legacy ? tally("bj", { ...r, net: r.stack - r.bought }) : tally("bj", r.bj), uth = tally("uth", r.uth);
+      if (bj) rec.bj = bj; if (uth) rec.uth = uth;
+      out[rid] = rec;
+    }
+    return out;
+  },
+  /** One game's standings ("bj" or "uth"): chips won or lost in that game, best first. Only players who've played it. */
+  standings(records, roster, game = "bj") {
+    return roster.filter(r => records[r.id] && records[r.id][game] && records[r.id][game].hands > 0)
+      .map(r => { const x = records[r.id], g = x[game]; return { rid: r.id, name: r.name, ...g, net: g.net, stack: x.stack, bought: x.bought }; })
+      .sort((a, b) => b.net - a.net || b.hands - a.hands || a.name.localeCompare(b.name));
+  },
+  /** Everyone's current bankroll (the chips they hold), biggest first. Only players who've played either game. */
+  bankrolls(records, roster) {
+    return roster.filter(r => records[r.id] && ((records[r.id].bj && records[r.id].bj.hands) || (records[r.id].uth && records[r.id].uth.hands)))
+      .map(r => ({ rid: r.id, name: r.name, stack: records[r.id].stack, bought: records[r.id].bought }))
+      .sort((a, b) => b.stack - a.stack || a.name.localeCompare(b.name));
+  },
+};
+/** Ultimate Texas Hold'em against the dealer: Ante = Blind, raise 4x/3x before the flop, 2x on the flop, 1x on the river or fold. */
+const UTH = {
+  SEATS: 6, ANTE_MIN: 500, ANTE_MAX: 10000, SIDE_MIN: 100, SIDE_MAX: 2500, BUYIN: 50000,
+  HANDS: ["High Card", "Pair", "Two Pair", "Three of a Kind", "Straight", "Flush", "Full House", "Four of a Kind", "Straight Flush", "Royal Flush"],
+  /** Blind pays on a winning straight or better (odds as [to win, for]); anything less pushes. */
+  BLIND_PAYS: { 9: [500, 1], 8: [50, 1], 7: [10, 1], 6: [3, 1], 5: [3, 2], 4: [1, 1] },
+  /** Trips: your best five of seven, win or lose, even when you fold. */
+  TRIPS_PAYS: { 9: 50, 8: 40, 7: 30, 6: 8, 5: 7, 4: 4, 3: 3 },
+  /** Pocket Bonus: your two hole cards. */
+  POCKET_PAYS: { "aa-aa": 1000, aa: 30, aks: 25, aqjs: 20, ako: 15, kqj: 10, aqjo: 5, pair: 3 },
+  POCKET_NAMES: { "aa-aa": "Aces vs Dealer Aces", aa: "Pocket Aces", aks: "A-K Suited", aqjs: "A-Q / A-J Suited", ako: "A-K", kqj: "K-K, Q-Q or J-J", aqjo: "A-Q / A-J", pair: "Pair 2-2 to 10-10" },
+  ord: c => ({ A: 14, K: 13, Q: 12, J: 11 }[c.r] || Number(c.r)),
+  /** A five-card hand as one comparable number: category, then the ranks that break ties. */
+  eval5(cards) {
+    const v = cards.map(UTH.ord).sort((a, b) => b - a), flush = cards.every(c => c.s === cards[0].s);
+    const uniq = [...new Set(v)];
+    let high = 0;
+    if (uniq.length === 5) { if (v[0] - v[4] === 4) high = v[0]; else if (v[0] === 14 && v[1] === 5) high = 5; }
+    const cnt = {}; for (const x of v) cnt[x] = (cnt[x] || 0) + 1;
+    const groups = Object.entries(cnt).map(([r, n]) => [n, Number(r)]).sort((a, b) => b[0] - a[0] || b[1] - a[1]);
+    const ranks = groups.map(g => g[1]);
+    let cat, keys;
+    if (high && flush) { cat = high === 14 ? 9 : 8; keys = [high]; }
+    else if (groups[0][0] === 4) { cat = 7; keys = ranks; }
+    else if (groups[0][0] === 3 && groups[1][0] === 2) { cat = 6; keys = ranks; }
+    else if (flush) { cat = 5; keys = v; }
+    else if (high) { cat = 4; keys = [high]; }
+    else if (groups[0][0] === 3) { cat = 3; keys = ranks; }
+    else if (groups[0][0] === 2 && groups[1][0] === 2) { cat = 2; keys = ranks; }
+    else if (groups[0][0] === 2) { cat = 1; keys = ranks; }
+    else { cat = 0; keys = v; }
+    let score = cat; for (let k = 0; k < 5; k++) score = score * 16 + (keys[k] || 0);
+    return score;
+  },
+  catOf: score => Math.floor(score / 1048576),
+  RANK_NAMES: { 14: "Ace", 13: "King", 12: "Queen", 11: "Jack", 10: "Ten", 9: "Nine", 8: "Eight", 7: "Seven", 6: "Six", 5: "Five", 4: "Four", 3: "Three", 2: "Two" },
+  /** A hand in words: "Pair of Kings", "Two Pair, Aces and Sevens", "Queen-High Straight"... */
+  describe(score) {
+    const k = [4, 3, 2, 1, 0].map(e => Math.floor(score / 16 ** e) % 16), N = v => UTH.RANK_NAMES[v], P = v => (v === 6 ? "Sixes" : N(v) + "s");
+    return [`${N(k[0])} High`, `Pair of ${P(k[0])}`, `Two Pair, ${P(k[0])} and ${P(k[1])}`, `Three ${P(k[0])}`, `${N(k[0])}-High Straight`, `${N(k[0])}-High Flush`,
+      `${P(k[0])} Full of ${P(k[1])}`, `Four ${P(k[0])}`, `${N(k[0])}-High Straight Flush`, "Royal Flush"][UTH.catOf(score)];
+  },
+  /** Two hole cards in words: "Pocket Jacks", "A-K Suited", "Q-9". */
+  describeHole(hole) {
+    const [a, b] = [...hole].sort((x, y) => UTH.ord(y) - UTH.ord(x));
+    if (a.r === b.r) return `Pocket ${UTH.ord(a) === 6 ? "Sixes" : UTH.RANK_NAMES[UTH.ord(a)] + "s"}`;
+    return `${a.r}-${b.r}${a.s === b.s ? " Suited" : ""}`;
+  },
+  /** Best five of five to seven cards: { score, cat, name }. */
+  best(cards) {
+    const n = cards.length; let top = -1;
+    if (n === 5) top = UTH.eval5(cards);
+    else if (n === 6) for (let a = 0; a < 6; a++) { const sc = UTH.eval5(cards.filter((_, k) => k !== a)); if (sc > top) top = sc; }
+    else for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) { const sc = UTH.eval5(cards.filter((_, k) => k !== a && k !== b)); if (sc > top) top = sc; }
+    const cat = UTH.catOf(top);
+    return { score: top, cat, name: UTH.HANDS[cat] };
+  },
+  pocket(hole, dealer) {
+    const [x, y] = hole.map(UTH.ord).sort((a, b) => b - a), suited = hole[0].s === hole[1].s;
+    if (x === 14 && y === 14) return dealer && dealer.length === 2 && dealer.every(c => c.r === "A") ? "aa-aa" : "aa";
+    if (x === 14 && y === 13) return suited ? "aks" : "ako";
+    if (x === 14 && (y === 12 || y === 11)) return suited ? "aqjs" : "aqjo";
+    if (x === y && x >= 11) return "kqj";
+    if (x === y) return "pair";
+    return null;
+  },
+  newDeck(rng) {
+    const d = []; for (const s of Blackjack.SUITS) for (const r of Blackjack.RANKS) d.push({ r, s });
+    for (let i = d.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [d[i], d[j]] = [d[j], d[i]]; }
+    return d;
+  },
+  newTable() { return { n: 0, deck: [], seats: [], dealer: [], board: [], shown: 0, hole: true, phase: "bet", turn: null, round: 0 }; },
+  PLAYING: ["pre", "flop", "river"],
+  sit(t, rid, stack) {
+    if (t.phase !== "bet" && t.phase !== "done") throw new LedgerError("Wait for this hand to finish.");
+    if (t.seats.length >= UTH.SEATS) throw new LedgerError(`The table is full (${UTH.SEATS} players).`);
+    if (t.seats.some(x => x.rid === rid)) throw new LedgerError("That player is already at the table.");
+    if (!Number.isInteger(stack) || stack < 0) throw new LedgerError("Bad stack.");
+    t.seats.push({ rid, stack, ante: 0, trips: 0, pocket: 0, last: null, hole: [], play: 0, folded: false, inHand: false, before: stack, net: null, res: null });
+    return t.seats.length - 1;
+  },
+  leave(t, i) {
+    if (t.phase !== "bet" && t.phase !== "done") throw new LedgerError("Finish this hand before walking away.");
+    const s = t.seats[i]; if (!s) throw new LedgerError("Nobody is in that seat.");
+    t.seats.splice(i, 1); return s.stack;
+  },
+  /** Ante and Blind go out with the deal, and there must be enough left for at least a 1x Play bet. */
+  need: (ante, trips, pocket) => 3 * ante + trips + pocket,
+  nextBets(s) {
+    const l = s.last || {}, ante = l.ante && UTH.need(l.ante, 0, 0) <= s.stack ? l.ante : 0;
+    const trips = ante && UTH.need(ante, l.trips || 0, 0) <= s.stack ? l.trips || 0 : 0;
+    const pocket = ante && UTH.need(ante, trips, l.pocket || 0) <= s.stack ? l.pocket || 0 : 0;
+    return { ante, trips, pocket };
+  },
+  betsNow(t, s) { return t.phase === "done" ? UTH.nextBets(s) : { ante: s.ante || 0, trips: s.trips || 0, pocket: s.pocket || 0 }; },
+  newRound(t) {
+    if (t.phase !== "done") return;
+    t.dealer = []; t.board = []; t.shown = 0; t.hole = true; t.turn = null; t.phase = "bet"; t.deck = [];
+    for (const s of t.seats) { s.hole = []; s.play = 0; s.folded = false; s.inHand = false; s.net = null; s.res = null; Object.assign(s, UTH.nextBets(s)); }
+  },
+  /** kind: "ante" ($5 to $100 in $5s), "trips" or "pocket" ($1 to $25 in $1s, and only with an Ante). 0 takes it off. */
+  setBet(t, i, kind, cents) {
+    if (t.phase !== "bet") throw new LedgerError("Bets are closed.");
+    const s = t.seats[i]; if (!s) throw new LedgerError("Nobody is in that seat.");
+    if (!Number.isInteger(cents) || cents < 0) throw new LedgerError("Bad bet.");
+    const b = { ante: s.ante, trips: s.trips, pocket: s.pocket };
+    if (kind === "ante") { if (cents % UTH.ANTE_MIN || cents > UTH.ANTE_MAX) throw new LedgerError(`The Ante is ${Money.fmt(UTH.ANTE_MIN)} to ${Money.fmt(UTH.ANTE_MAX)}.`); b.ante = cents; if (!cents) b.trips = b.pocket = 0; }
+    else if (kind === "trips" || kind === "pocket") {
+      if (cents % 100 || (cents && (cents < UTH.SIDE_MIN || cents > UTH.SIDE_MAX))) throw new LedgerError(`${kind === "trips" ? "Trips" : "Pocket Bonus"} bets are $1 to $25.`);
+      if (cents && !b.ante) throw new LedgerError("Place an Ante first.");
+      b[kind] = cents;
+    } else throw new LedgerError("Unknown bet.");
+    if (UTH.need(b.ante, b.trips, b.pocket) > s.stack) throw new LedgerError("Not enough chips for that bet.");
+    Object.assign(s, b);
+  },
+  rebuy(t, i) {
+    const s = t.seats[i]; if (!s) throw new LedgerError("Nobody is in that seat.");
+    if (t.phase !== "bet") throw new LedgerError("Wait for this hand to finish.");
+    if (s.stack >= UTH.need(UTH.ANTE_MIN, 0, 0)) throw new LedgerError("You still have chips to play.");
+    s.stack += UTH.BUYIN; return UTH.BUYIN;
+  },
+  _draw(t) { const c = t.deck.pop(); t.n++; return { ...c, n: t.n }; },
+  deal(t, rng) {
+    if (t.phase !== "bet") throw new LedgerError("Finish this hand first.");
+    const playing = t.seats.filter(s => s.ante > 0);
+    if (!playing.length) throw new LedgerError(`Place an Ante first (${Money.fmt(UTH.ANTE_MIN)} minimum).`);
+    for (const s of playing) if (s.ante < UTH.ANTE_MIN || UTH.need(s.ante, s.trips, s.pocket) > s.stack) throw new LedgerError("A bet isn't valid.");
+    t.deck = UTH.newDeck(rng); t.round++; t.dealer = []; t.board = []; t.shown = 0; t.hole = true;
+    for (const s of t.seats) {
+      s.hole = []; s.play = 0; s.folded = false; s.net = null; s.res = null; s.before = s.stack; s.inHand = s.ante > 0;
+      if (!s.inHand) { s.trips = s.pocket = 0; continue; }
+      s.last = { ante: s.ante, trips: s.trips, pocket: s.pocket };
+      s.stack -= 2 * s.ante + s.trips + s.pocket;
+    }
+    for (let k = 0; k < 2; k++) { for (const s of t.seats) if (s.inHand) s.hole.push(UTH._draw(t)); t.dealer.push(UTH._draw(t)); }
+    for (let k = 0; k < 5; k++) { const c = t.deck.pop(); t.board.push({ ...c, n: 0 }); }   // numbered as they're turned over
+    t.phase = "pre"; t.turn = -1; UTH._advance(t);
+  },
+  /** The moves open to the player whose turn it is. */
+  options(t) {
+    if (!UTH.PLAYING.includes(t.phase) || t.turn == null) return [];
+    const s = t.seats[t.turn], a = s.ante;
+    if (t.phase === "pre") return ["check", ...(s.stack >= 3 * a ? ["bet3"] : []), ...(s.stack >= 4 * a ? ["bet4"] : [])];
+    if (t.phase === "flop") return ["check", ...(s.stack >= 2 * a ? ["bet2"] : [])];
+    return ["fold", ...(s.stack >= a ? ["bet1"] : [])];
+  },
+  act(t, move) {
+    if (!UTH.options(t).includes(move)) throw new LedgerError(UTH.PLAYING.includes(t.phase) ? "You can't do that now." : "Wait for the deal.");
+    const s = t.seats[t.turn];
+    if (move === "fold") s.folded = true;
+    else if (move !== "check") { s.play = Number(move.slice(3)) * s.ante; s.stack -= s.play; }
+    UTH._advance(t);
+  },
+  _reveal(t, upTo) { for (let k = t.shown; k < upTo; k++) t.board[k] = { ...t.board[k], n: ++t.n }; t.shown = upTo; },
+  /** Next player still to decide on this street; when nobody is left, the next cards come out (or the showdown). */
+  _advance(t) {
+    for (;;) {
+      const nx = t.seats.findIndex((s, k) => k > t.turn && s.inHand && !s.folded && !s.play);
+      if (nx >= 0) { t.turn = nx; return; }
+      if (t.phase === "pre") { UTH._reveal(t, 3); t.phase = "flop"; t.turn = -1; continue; }
+      if (t.phase === "flop") { UTH._reveal(t, 5); t.phase = "river"; t.turn = -1; continue; }
+      return UTH._showdown(t);
+    }
+  },
+  _showdown(t) {
+    UTH._reveal(t, 5); t.hole = false; t.turn = null;
+    const d = UTH.best([...t.dealer, ...t.board]), qual = d.cat >= 1;
+    t.dealerHand = { cat: d.cat, name: d.name, qual };
+    for (const s of t.seats) {
+      if (!s.inHand) continue;
+      const p = UTH.best([...s.hole, ...t.board]), a = s.ante, cmp = Math.sign(p.score - d.score);
+      const res = { cat: p.cat, name: p.name, outcome: s.folded ? "fold" : cmp > 0 ? "win" : cmp < 0 ? "lose" : "push", wouldWin: s.folded && cmp > 0, ante: 0, blind: 0, play: 0, trips: 0, pocket: 0, pocketHand: null };
+      if (res.outcome === "win") { const bp = UTH.BLIND_PAYS[p.cat]; res.play = 2 * s.play; res.ante = qual ? 2 * a : a; res.blind = bp ? a + Math.floor(a * bp[0] / bp[1]) : a; }
+      else if (res.outcome === "push") { res.play = s.play; res.ante = a; res.blind = a; }
+      else if (res.outcome === "lose") { res.ante = qual ? 0 : a; }
+      if (s.trips) res.trips = p.cat >= 3 ? s.trips * (1 + UTH.TRIPS_PAYS[p.cat]) : 0;
+      if (s.pocket) { const h = UTH.pocket(s.hole, t.dealer); res.pocketHand = h; res.pocket = h ? s.pocket * (1 + UTH.POCKET_PAYS[h]) : 0; }
+      s.stack += res.ante + res.blind + res.play + res.trips + res.pocket;
+      s.res = res; s.net = s.stack - s.before;
+    }
+    t.phase = "done";
+  },
+  /** What each part of the hand won or lost: [{ label, amount }], adding up to the net. */
+  breakdown(t, s) {
+    const r = s.res; if (!r || s.net == null) return [];
+    const a = s.ante, out = [];
+    if (r.outcome === "fold") out.push({ label: "Fold", amount: -2 * a });
+    else {
+      out.push({ label: r.outcome === "push" ? "Ante push" : r.ante === a ? "Ante push (no qualify)" : "Ante", amount: r.ante - a });
+      out.push({ label: r.blind > a ? `Blind ${r.name}` : r.blind === a ? "Blind push" : "Blind", amount: r.blind - a });
+      out.push({ label: `Play ${s.play / a}x`, amount: r.play - s.play });
+    }
+    if (s.trips) out.push({ label: `Trips${r.trips ? " " + r.name : ""}`, amount: r.trips - s.trips });
+    if (s.pocket) out.push({ label: `Pocket Bonus${r.pocketHand ? " " + UTH.POCKET_NAMES[r.pocketHand] : ""}`, amount: r.pocket - s.pocket });
+    return out;
+  },
+  /** The usual raise-4x hands before the flop. */
+  preRaise(hole) {
+    const [x, y] = hole.map(UTH.ord).sort((a, b) => b - a), suited = hole[0].s === hole[1].s;
+    if (x === y) return x >= 3;
+    if (x === 14) return true;
+    if (x === 13) return suited || y >= 5;
+    if (x === 12) return suited ? y >= 6 : y >= 8;
+    if (x === 11) return suited ? y >= 8 : y >= 10;
+    return false;
+  },
+  /**
+   * Wizard of Odds' simple strategy (wizardofodds.com, Ultimate Texas Hold'em), with the reason, so the dealer can explain it:
+   * flop: bet 2x with two pair or better, a hidden pair (not pocket 2s), or four to a flush with a hidden 10 or better in that suit.
+   * river: bet 1x with a hidden pair or better, or when fewer than 21 dealer cards would beat you.
+   */
+  flopAdvice(hole, board) {
+    const all = [...hole, ...board], me = UTH.best(all), [x, y] = hole.map(UTH.ord);
+    const boardOnly = (() => { const c = {}; board.forEach(k => (c[UTH.ord(k)] = (c[UTH.ord(k)] || 0) + 1)); const m = Math.max(...Object.values(c)); return m === 3 ? 3 : m === 2 ? 1 : 0; })();
+    if (me.cat >= 2 && me.cat > boardOnly) return { bet: true, why: "made", made: me.name };
+    if (x === y) return x >= 3 ? { bet: true, why: "pocketPair" } : { bet: false, why: "deuces" };
+    if (board.some(c => UTH.ord(c) === x || UTH.ord(c) === y)) return { bet: true, why: "hiddenPair" };
+    for (const su of Blackjack.SUITS) { const hi = hole.filter(c => c.s === su && UTH.ord(c) >= 10).sort((a, b) => UTH.ord(b) - UTH.ord(a))[0];
+      if (all.filter(c => c.s === su).length >= 4 && hi) return { bet: true, why: "flushDraw", card: hi.r }; }
+    return { bet: false, why: "nothing" };
+  },
+  flopBet(hole, board) { return UTH.flopAdvice(hole, board).bet; },
+  /** Dealer outs: unseen cards that would beat you if the dealer held them (with nothing else useful). */
+  outs(hole, board) {
+    const used = new Set([...hole, ...board].map(c => c.r + c.s)), me = UTH.best([...hole, ...board]).score; let n = 0;
+    for (const s of Blackjack.SUITS) for (const r of Blackjack.RANKS) if (!used.has(r + s) && UTH.best([...board, { r, s }]).score > me) n++;
+    return n;
+  },
+  riverAdvice(hole, board) {
+    const [x, y] = hole.map(UTH.ord), me = UTH.best([...hole, ...board]), table = UTH.best(board);
+    if (x === y || board.some(c => UTH.ord(c) === x || UTH.ord(c) === y) || me.cat > table.cat) return { bet: true, why: "hidden", made: me.name };
+    const outs = UTH.outs(hole, board);
+    return { bet: outs < 21, why: "outs", outs };
+  },
+  /** River: the exact average result of betting 1x against every hand the dealer could hold, in Antes (folding is -2). Used to check the simple strategy. */
+  riverEV(hole, board) {
+    const used = new Set([...hole, ...board].map(c => c.r + c.s)), rest = [];
+    for (const s of Blackjack.SUITS) for (const r of Blackjack.RANKS) if (!used.has(r + s)) rest.push({ r, s });
+    const me = UTH.best([...hole, ...board]), bp = UTH.BLIND_PAYS[me.cat], blindWin = bp ? bp[0] / bp[1] : 0;
+    let sum = 0, n = 0;
+    for (let a = 0; a < rest.length; a++) for (let b = a + 1; b < rest.length; b++) {
+      const d = UTH.best([rest[a], rest[b], ...board]), q = d.cat >= 1;
+      sum += me.score > d.score ? 1 + (q ? 1 : 0) + blindWin : me.score < d.score ? -2 - (q ? 1 : 0) : 0; n++;
+    }
+    return sum / n;
+  },
+  /** The book move for whoever's turn it is, and why: { move, why, made?, card?, outs? }. move: "bet4" | "bet3" | "check" | "bet2" | "bet1" | "fold". */
+  advice(t) {
+    const opts = UTH.options(t); if (!opts.length) return null;
+    const s = t.seats[t.turn];
+    if (t.phase === "pre") { const raise = UTH.preRaise(s.hole);
+      return { move: raise ? (opts.includes("bet4") ? "bet4" : opts.includes("bet3") ? "bet3" : "check") : "check", why: raise ? "raise" : "weak" }; }
+    if (t.phase === "flop") { const f = UTH.flopAdvice(s.hole, t.board.slice(0, 3)); return { ...f, move: f.bet && opts.includes("bet2") ? "bet2" : "check" }; }
+    const r = UTH.riverAdvice(s.hole, t.board); return { ...r, move: r.bet && opts.includes("bet1") ? "bet1" : "fold" };
+  },
+  hint(t) { const a = UTH.advice(t); return a ? a.move : null; },
+  /** Did this move go against the book? null if not; otherwise { kind, book, hand }. */
+  offBook(t, move) {
+    const adv = UTH.advice(t), book = adv && adv.move; if (!book || move === book) return null;
+    const s = t.seats[t.turn], [x, y] = [...s.hole].sort((a, b) => UTH.ord(b) - UTH.ord(a));
+    const hand = `${x.r}${y.r}${x.r === y.r ? "" : x.s === y.s ? " suited" : ""}`;
+    const kind = t.phase === "pre" ? (move === "check" ? "preCheck" : book === "check" ? "preRaiseBad" : "bet3")
+      : t.phase === "flop" ? (move === "check" ? "flopCheck" : "flopBet") : move === "fold" ? "riverFold" : "riverCall";
+    return { kind, book, hand, why: adv.why, made: adv.made, card: adv.card, outs: adv.outs };
+  },
+};
 /*CORE-END*/
 
 // ===== App state & storage =====
-const KEY = "pokerbank.session.v1", HKEY = "pokerbank.history.v1", RKEY = "pokerbank.roster.v1", CKEY = "pokerbank.chips.v1", BKEY = "pokerbank.bomb.v1";
+const KEY = "pokerbank.session.v1", HKEY = "pokerbank.history.v1", RKEY = "pokerbank.roster.v1", CKEY = "pokerbank.chips.v1", BKEY = "pokerbank.bomb.v1", JKEY = "pokerbank.blackjack.v1", SKEY = "pokerbank.chipsets.v1";
 const getRoster = () => { const r = store.get(RKEY); return Array.isArray(r) ? r.filter(x => x && Number.isInteger(x.id) && typeof x.name === "string") : []; };
 const setRoster = r => store.set(RKEY, r);
 /** Past sessions, ignoring anything in storage that isn't a session entry. */
@@ -1633,7 +2442,10 @@ const demoRid = n => DEMO_ROSTER.find(r => r.name === n).id;
 /** Players that can be seated right now. In the demo, getRoster() reads the demo's sample players. */
 const seatableRoster = () => getRoster();
 /** The demo's whole world: sample players, a few finished sessions for the leaderboard, and a game in progress. */
+// Bob brings the chips in the demo: his set is the one in use, and the sample games are played with it
+const DEMO_BOB_CHIPS = [[5, "red", 250], [25, "green", 100], [100, "black", 50], [500, "purple", 25], [1000, "yellow", 25], [5000, "orange", 25]].map(([cents, color, count]) => ({ cents, color, count }));
 function demoSandbox() {
+  const bobChips = DEMO_BOB_CHIPS; ChipSet.apply(bobChips);
   const looks = { Bob: ["Bobby Buttons", "Never fold a suited ace", "A♠ K♠"], Dan: ["The Professor", "Math always wins", "Q♥ Q♦"], Sam: ["Slow Roll Sam", "It's not over till the river", "7♣ 2♦"],
     Eve: ["Steady Eddie", "Fold and wait", "J♦ J♣"], Ava: ["Lady Luck", "Feeling lucky", "10♥ 10♠"], Leo: ["The Lion", "All in or nothing", "K♣ K♥"], Mia: ["Mia Moneybags", "Pay to play", "A♥ 9♥"] };
   const roster = DEMO_ROSTER.map(r => ({ id: r.id, name: r.name, nick: looks[r.name][0], motto: looks[r.name][1], hand: looks[r.name][2], added: 1 }));
@@ -1650,8 +2462,9 @@ function demoSandbox() {
     Report.settleUp(l).forEach(x => (x.kind === "iou-bank" ? l.settle(x.fromPid, x.cents, "CASH") : x.method === "SPLIT" ? Object.entries(x.parts).forEach(([m, c]) => l.pay(null, x.toPid, c, m)) : l.pay(x.fromPid, x.toPid, x.cents, x.method === "ANY" ? "VENMO" : x.method)));
     history.unshift(archiveEntry(l, 7000 + k));
   });
-  const cur = exampleLedger();
-  return { [RKEY]: JSON.stringify(roster), [HKEY]: JSON.stringify(history), [KEY]: JSON.stringify({ events: cur.events, voided: cur.voided }) };
+  const cur = exampleLedger(), bob = demoRid("Bob");
+  return { [RKEY]: JSON.stringify(roster), [HKEY]: JSON.stringify(history.map(h => ({ ...h, chipOwner: bob }))), [KEY]: JSON.stringify({ events: cur.events, voided: cur.voided, chipOwner: bob }),
+    [CKEY]: JSON.stringify(bobChips), [SKEY]: JSON.stringify({ sets: { [bob]: bobChips }, owner: bob, base: DEFAULT_CHIPS }) };
 }
 function startDemo() { cancelBomb(); demo = true; sandbox = demoSandbox(); ChipSet.apply(store.get(CKEY)); ledger = new Ledger(); mode = "real"; closedId = null; homeNotice = null; go("home"); }
 function exitDemo() { if (bomb && bomb.demo) bomb = null; bombStage = null; drawBomb(); demo = false; sandbox = null; ChipSet.apply(store.get(CKEY)); ledger = new Ledger(); mode = "real"; closedId = null; eg = null; viewRid = null; go("home"); toast("Demo closed. Nothing from it was saved."); }
@@ -1662,7 +2475,7 @@ function exampleLedger() {
   const sam = l.addPlayer("Sam", 2000, "IOU", demoRid("Sam")); const eve = l.addPlayer("Eve", 2000, "CASH", demoRid("Eve"));
   l.startSession();                                    // seated at the table, clock running
   l.buyIn(dan, 2000, "CASH");                          // re-buy
-  l.cashOut(eve, 0, "CASH", false, [3, 2, 2, 0, 1]);   // counted by chip color: $12.65 -> paid $13
+  l.cashOut(eve, 0, "CASH", false, [3, 2, 2, 0, 1, 0]);   // counted by chip color: $12.65 -> paid $13
   l.buyIn(bob, 1000, "CASH");                          // add-on
   l.settle(sam, 500, "CASH");                          // partial IOU payment in cash, still owes $15
   l.clock = () => Date.now();
@@ -1675,31 +2488,56 @@ function savedSession() {
   if (!Ledger.valid(s.events, s.voided)) return { damaged: true };
   return new Ledger(s.events, s.voided);
 }
+// ---- players' chip sets
+const chipSets = () => ChipSets.clean(store.get(SKEY), new Set(getRoster().map(r => r.id)));
+const chipOwner = () => chipSets().owner;
+const curChips = () => ChipSet.normalize(store.get(CKEY)) || DEFAULT_CHIPS;
+const ownerName = rid => (rid != null && (getRoster().find(r => r.id === rid) || {}).name) || "";
+/** The chip set in use changes (an edit on the start screen): the owner's copy follows. */
+function putChips(set) {
+  store.set(CKEY, set); ChipSet.apply(set);
+  const cs = chipSets(); if (cs.owner != null) { cs.sets[cs.owner] = set; store.set(SKEY, cs); }
+}
+/** A player's set: the one in use when they own it, otherwise their saved copy (null if they have none). */
+const playerChips = rid => { const cs = chipSets(); return rid === cs.owner ? curChips() : cs.sets[rid] || null; };
+function putPlayerChips(rid, set) {
+  const cs = chipSets(); if (rid === cs.owner) return putChips(set);
+  cs.sets[rid] = set; store.set(SKEY, cs);
+}
+const sessionLive = () => { const sv = savedSession(); return !!(sv && !sv.damaged); };
+function useChips(rid) {
+  if (sessionLive()) return toast("Finish the session in progress first.");
+  const r = ChipSets.use(chipSets(), curChips(), rid); if (!r) return;
+  store.set(SKEY, r.cs); store.set(CKEY, r.set); ChipSet.apply(r.set); closeDialog(); render();
+  toast(rid == null ? "Using the default chips" : `Using ${ownerName(rid)}'s chips`);
+}
 // closedId: when the session on screen has been concluded, the id of its Past sessions entry.
 let closedId = null, reportFrom = "table";
 function save() {
   if (mode !== "real") return;
   if (closedId != null) return updateArchived(closedId, ledger);
-  store.set(KEY, { events: ledger.events, voided: ledger.voided });
+  const owner = chipOwner();
+  store.set(KEY, { events: ledger.events, voided: ledger.voided, ...(owner != null ? { chipOwner: owner } : {}) });
 }
-function archiveEntry(l, id) {
+function archiveEntry(l, id, chipOwner = null) {
   const ps = l.players(), t0 = l.startedAt || Date.now(), st = Report.standings(l);
   const bits = [`${ps.length} player${ps.length === 1 ? "" : "s"}`, `${Money.fmt(l.totalIn)} in play`];
   if (l.isStarted) bits.push(Report.duration(l.elapsed()));
   if (st.winners.length) bits.push(`top: ${st.winners.map(p => p.name).join(" & ")} ${Money.signed(st.winners[0].exactNet)}`);
   if (l.iouOutstanding > 0) bits.push(`${Money.fmt(l.iouOutstanding)} IOU still owed`);
-  return { id, title: Report.date(t0) + " · " + Report.time(t0), summary: bits.join(" · "), events: l.events, voided: l.voided };
+  return { id, title: Report.date(t0) + " · " + Report.time(t0), summary: bits.join(" · "), events: l.events, voided: l.voided, ...(chipOwner != null ? { chipOwner } : {}) };
 }
 function archive(l) {
   const id = Date.now() + Math.floor(Math.random() * 1000);
   const h = getHistory();
-  h.unshift(archiveEntry(l, id));
+  const sv = store.get(KEY);
+  h.unshift(archiveEntry(l, id, sv && Number.isInteger(sv.chipOwner) ? sv.chipOwner : chipOwner()));
   store.set(HKEY, h.slice(0, 1000)); // kept for the all-time leaderboard
   return id;
 }
 function updateArchived(id, l) {
   const h = getHistory(), i = h.findIndex(x => x.id === id);
-  if (i >= 0) { h[i] = archiveEntry(l, id); store.set(HKEY, h); }
+  if (i >= 0) { h[i] = archiveEntry(l, id, h[i].chipOwner); store.set(HKEY, h); }
 }
 /** A concluded session leaves the start screen: it moves to Past sessions and the report is shown. */
 function afterConclude(msg) {
@@ -1708,7 +2546,7 @@ function afterConclude(msg) {
   reportFrom = "closed"; go("report");
   toast(mode === "real" ? msg + " Saved to Past sessions." : msg);
 }
-function go(v) { view = v; render(); window.scrollTo(0, 0); }
+function go(v) { if (v !== "players") showBank = false; view = v; render(); window.scrollTo(0, 0); }
 /** Deletes all Poker Bank data. Keeps only the note that old Android data was already moved, so it isn't brought back. */
 function wipeEverything() {
   const keep = "pokerbank.legacyImported";
@@ -1716,12 +2554,13 @@ function wipeEverything() {
   try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith("pokerbank.")) keys.add(k); } } catch {}
   keys.forEach(k => { if (k !== keep) store.del(k); });
   ledger = new Ledger(); mode = "real"; closedId = null; reportFrom = "table"; eg = null; viewRid = null; homeNotice = null; bomb = null; bombStage = null; drawBomb(); ChipSet.apply(null);
+  if (bj) { clearTimeout(bj.timer); bj = null; bjD = null; $("#bj").innerHTML = ""; }
 }
 function startBlank() { ledger = new Ledger(); mode = "real"; save(); go("table"); }
 
 // ===== Export / Import =====
 /** Everything on this device, as saved (the demo is never included). */
-function localData() { const sv = store.get(KEY); return { roster: getRoster(), history: getHistory(), chips: ChipSet.normalize(store.get(CKEY)), session: sv && Array.isArray(sv.events) && sv.events.length ? { events: sv.events, voided: sv.voided || [] } : null }; }
+function localData() { const sv = store.get(KEY); return { roster: getRoster(), history: getHistory(), chips: ChipSet.normalize(store.get(CKEY)), chipSets: chipSets(), blackjack: bjRecords(), blackjackPot: bjPot(), session: sv && Array.isArray(sv.events) && sv.events.length ? { events: sv.events, voided: sv.voided || [] } : null }; }
 function hasLocalData() { const d = localData(); return d.roster.length > 0 || d.history.length > 0 || !!d.session; }
 function exportText() { return DataFile.make(localData()); }
 function canShareFiles() {
@@ -1765,9 +2604,10 @@ function startImport(text) {
   applyImport(data);
 }
 function applyImport(data) {
-  const ok = [store.set(RKEY, data.roster), store.set(HKEY, data.history)];
+  const ok = [store.set(RKEY, data.roster), store.set(HKEY, data.history), store.set(JKEY, { records: data.blackjack || {}, table: null, jackpot: data.blackjackPot || Blackjack.cleanPot(null) })];
   if (data.session) ok.push(store.set(KEY, data.session)); else store.del(KEY);
   if (data.chips) ok.push(store.set(CKEY, data.chips)); else store.del(CKEY);
+  if (data.chipSets && Object.keys(data.chipSets.sets).length) ok.push(store.set(SKEY, data.chipSets)); else store.del(SKEY);
   ChipSet.apply(data.chips);
   cancelBomb();
   ledger = new Ledger(); mode = "real"; closedId = null; reportFrom = "table"; eg = null; viewRid = null; homeNotice = null;
@@ -1777,7 +2617,7 @@ function applyImport(data) {
 
 function applyMerge(data) {
   const m = DataFile.merge(localData(), data);
-  const ok = [store.set(RKEY, m.roster), store.set(HKEY, m.history)];
+  const ok = [store.set(RKEY, m.roster), store.set(HKEY, m.history), store.set(JKEY, { records: m.blackjack, table: null, jackpot: m.blackjackPot || bjPot() }), store.set(SKEY, m.chipSets)];
   ledger = new Ledger(); mode = "real"; closedId = null; reportFrom = "table"; eg = null; viewRid = null; homeNotice = null;
   closeDialog(); go("home");
   toast(ok.every(Boolean) ? DataFile.mergeSummary(m) : "Merged, but this browser is out of storage space, so it may not be kept after you close the page.");
@@ -1826,6 +2666,30 @@ function unlockAudio() {
   try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume(); } catch {}
   try { if (window.speechSynthesis) speechSynthesis.getVoices(); } catch {}
 }
+// The hidden tables: small synthesized sounds and (where the phone supports it) a buzz. One switch for both, kept on this phone.
+const SFXKEY = "pokerbank.sound.v1";
+const sfxOn = () => { try { return localStorage.getItem(SFXKEY) !== "off"; } catch { return true; } };
+function sfxToggle() { try { localStorage.setItem(SFXKEY, sfxOn() ? "off" : "on"); } catch {} if (sfxOn()) sfx("chip"); }
+const buzz = pattern => { if (sfxOn() && navigator.vibrate) try { navigator.vibrate(pattern); } catch {} };
+function sfx(kind) {
+  if (!sfxOn()) return; unlockAudio(); const a = actx; if (!a) return;
+  const t0 = a.currentTime + 0.01, out = a.createGain(); out.gain.value = 0.5; out.connect(a.destination);
+  const env = (g, t, peak, len) => { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + len); };
+  const noise = (t, len, type, freq, q, peak) => { const buf = a.createBuffer(1, Math.max(1, Math.floor(a.sampleRate * len)), a.sampleRate), ch = buf.getChannelData(0); for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+    const n = a.createBufferSource(); n.buffer = buf; const f = a.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q; const g = a.createGain(); env(g, t, peak, len); n.connect(f).connect(g).connect(out); n.start(t); n.stop(t + len); };
+  const tone = (t, freq, len, peak, type = "sine") => { const o = a.createOscillator(), g = a.createGain(); o.type = type; o.frequency.value = freq; env(g, t, peak, len); o.connect(g).connect(out); o.start(t); o.stop(t + len + 0.02); };
+  if (kind === "chip") { noise(t0, 0.035, "bandpass", 5200, 6, 0.5); tone(t0, 2600, 0.04, 0.12); noise(t0 + 0.045, 0.03, "bandpass", 4300, 6, 0.3); buzz(8); }
+  else if (kind === "card") noise(t0, 0.09, "highpass", 2500, 0.7, 0.22);
+  else if (kind === "deal") [0, 0.11, 0.22, 0.33].forEach(d => noise(t0 + d, 0.08, "highpass", 2500, 0.7, 0.2));
+  else if (kind === "tap") { tone(t0, 170, 0.07, 0.5); tone(t0 + 0.09, 170, 0.07, 0.4); }
+  else if (kind === "win") { tone(t0, 880, 0.25, 0.25); tone(t0 + 0.11, 1320, 0.4, 0.25); buzz(20); }
+  else if (kind === "bigwin") { [660, 880, 1100, 1320, 1760].forEach((f, i) => tone(t0 + i * 0.09, f, 0.45, 0.22)); buzz([30, 40, 30, 40, 90]); }
+}
+/** The sound a table button makes. */
+const SFX_FOR = { chip: "chip", tt: "chip", prog: "chip", trips: "chip", pocket: "chip", bet4: "chip", bet3: "chip", bet2: "chip", bet1: "chip", double: "chip", clear: "chip",
+  deal: "deal", hit: "card", split: "card", fold: "card", stand: "tap", check: "tap" };
+/** End of a hand: a chime for a win, more for a big one. */
+function sfxResult(nets, bigAt) { const best = Math.max(0, ...nets); if (best >= bigAt) sfx("bigwin"); else if (best > 0) sfx("win"); }
 function playBombSound() {
   unlockAudio(); const a = actx; if (!a) return;
   const out = a.createDynamicsCompressor(); out.connect(a.destination); const master = a.createGain(); master.gain.value = 0.8; master.connect(out);
@@ -1940,7 +2804,8 @@ function chipWarn(before) { const r = chipRoom(); if (before && before.left >= 0
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 let toastTimer;
-function toast(msg) { const el = $("#toast"); el.innerHTML = `<div class="toast" role="status">${esc(msg)}</div>`; clearTimeout(toastTimer); toastTimer = setTimeout(() => (el.innerHTML = ""), 2600); }
+function toast(msg) { if (typeof bjAtTable === "function" && bjAtTable()) return bjSayText(msg);   // at the blackjack table, the dealer says it
+  const el = $("#toast"); el.innerHTML = `<div class="toast" role="status">${esc(msg)}</div>`; clearTimeout(toastTimer); toastTimer = setTimeout(() => (el.innerHTML = ""), 2600); }
 function act(fn) { try { fn(); save(); render(); return null; } catch (e) { if (e instanceof LedgerError) return e.message; throw e; } }
 function photoPickHTML(ph) {
   return `<button type="button" class="av-btn" data-x="photo-pick" aria-label="${ph ? "Change photo" : "Add photo"}">${ph ? `<img class="av" src="${ph}" alt="">`
@@ -2118,7 +2983,7 @@ function playersView() {
   const st = allTime();
   return `<div class="wrap">
     <header class="top report-head"><button class="ghost" data-a="back">← Back</button><h2>Leaderboard</h2><button class="ghost" data-a="roster-add">Create Player</button></header>
-    ${st.rows.length ? `
+    ${(() => { const egg = eggBoardHTML(); return `<div class="lb-layout ${egg ? "has-egg" : ""}"><div>`; })()}${st.rows.length ? `
     <ol class="lb">${st.rows.map(r => `<li class="${r.total > 0 ? "up" : r.total < 0 ? "down" : ""}">
       <span class="rk num">${r.rank == null ? "–" : (r.tied ? "T" : "") + r.rank}</span>
       <span class="lb-who">${avatarHTML(getRoster().find(x => x.id === r.rid) || r)}<span class="lb-txt"><b>${esc(r.name)}${(() => { const n = getRoster().find(x => x.id === r.rid)?.nick; return n ? ` <i class="lb-nick">“${esc(n)}”</i>` : ""; })()}</b><small class="num">${r.played ? `${r.played} session${r.played === 1 ? "" : "s"} · won ${r.wins} of ${r.played}${r.topWins ? ` · top winner ${r.topWins}×` : ""}${r.curtisWins ? ` · Curtis Game ${r.curtisWins}×` : ""}` : "No sessions yet"}</small></span></span>
@@ -2126,7 +2991,17 @@ function playersView() {
       <button class="btn lb-view" data-a="viewplayer" data-r="${r.rid}">View Player</button>
     </li>`).join("")}</ol>${curtisBoardHTML(st)}`
     : `<div class="empty">No players yet.<br><button class="btn primary" data-a="roster-add">Create Player</button></div>`}
+    </div>${eggBoardHTML()}</div>
   </div>`;
+}
+/** A player's own chip set on their page: tap a chip to change it. */
+function playerChipsHTML(rid) {
+  const set = playerChips(rid), using = chipOwner() === rid;
+  if (!set) return `<section class="pl-chipset"><h3 class="pl-h">Chip Set</h3><button class="btn" data-a="chips-setup" data-r="${rid}">Set Up Chip Set</button></section>`;
+  const chips = set.map((c, i) => { const k = CHIP_COLORS[c.color]; return `<button class="chip-btn" data-a="chip-edit" data-r="${rid}" data-i="${i}" aria-label="${k.name} ${chipLabel(c.cents)} chip, ${c.count}. Tap to change it.">${chipHTML({ color: k.hex, text: k.text, edge: k.edge, label: chipLabel(c.cents) })}${c.count ? `<small class="num">${c.count}</small>` : ""}</button>`; }).join("");
+  return `<section class="pl-chipset"><h3 class="pl-h">Chip Set <small class="num">${Money.fmt(ChipSet.value(set))}</small></h3>
+    <div class="home-chips pl-chips">${chips}${set.length < ChipSet.MAX ? `<button class="chip-add" data-a="chip-add" data-r="${rid}" aria-label="Add a chip">+</button>` : ""}</div>
+    <div class="seat-actions">${using ? `<span class="pill">In Use</span>` : `<button class="btn" data-a="chips-use" data-r="${rid}">Use These Chips</button>`}<button class="btn danger-ghost" data-a="chips-drop" data-r="${rid}">Remove Chip Set</button></div></section>`;
 }
 /** Leaderboard: Curtis Game champions and how often each game has come up. */
 function curtisBoardHTML(st) {
@@ -2186,6 +3061,7 @@ function playerView() {
       ${r.iouOwed > 0 ? `<p class="owes num">Still owes ${Money.fmt(r.iouOwed)} in IOUs from past sessions.</p>` : ""}
     </section>
     ${trendChartHTML(r.trend)}
+    ${playerChipsHTML(r.rid)}
     <h3 class="pl-h">Session history</h3>
     ${r.played ? `<ol class="pl-hist">${r.sessions.map(e => `<li><button data-a="openhist" data-h="${e.hid}">
       <span class="ph-when"><b>${esc(Report.date(e.time))}</b><small class="num">${esc(Report.time(e.time))} · ${e.rank ? `${e.tied ? "tied " : ""}${ordinal(e.rank)} of ${e.of}` : "not ranked"}${e.winner ? " · top winner" : ""}</small></span>
@@ -2206,6 +3082,7 @@ function homeView() {
   return `<div class="wrap home">
     <div class="home-in">
       <div class="home-chips" role="group" aria-label="Your chip set">${CHIPS.map((c, i) => `<button class="chip-btn" data-a="chip-edit" data-i="${i}" aria-label="${c.name} ${c.label} chip. Tap to set it up.">${chipHTML(c)}</button>`).join("")}${CHIPS.length < ChipSet.MAX ? `<button class="chip-add" data-a="chip-add" aria-label="Add a chip (up to ${ChipSet.MAX})" title="Add a chip">+</button>` : ""}</div>
+      ${ownerName(chipOwner()) ? `<p class="chip-owner">${esc(ownerName(chipOwner()))}'s Chips</p>` : ""}
       <h1 class="home-title">Poker Bank</h1>
       ${homeNotice ? `<p class="note">${esc(homeNotice)}</p>` : ""}
       <div class="home-actions">
@@ -2384,7 +3261,7 @@ function reportView(l, live) {
 function historyView() {
   const h = getHistory();
   return `<div class="wrap"><header class="top"><button class="ghost" data-a="back">← Back</button><h1>Past sessions</h1></header>
-    <div class="history">${h.length ? h.map((x, i) => `<button data-a="openpast" data-i="${i}"><strong>${esc(x.title || "Session")}</strong><br><span class="num" style="color:var(--ink-soft)">${esc(x.summary || "")}</span></button>`).join("") : `<div class="empty">No finished sessions yet. Sessions are saved here automatically when you end them (in this browser only).</div>`}</div></div>`;
+    <div class="history">${h.length ? h.map((x, i) => `<button data-a="openpast" data-i="${i}"><strong>${esc(x.title || "Session")}</strong><br><span class="num" style="color:var(--ink-soft)">${esc(x.summary || "")}${ownerName(x.chipOwner) ? ` · ${esc(ownerName(x.chipOwner))}'s chips` : ""}</span></button>`).join("") : `<div class="empty">No finished sessions yet. Sessions are saved here automatically when you end them (in this browser only).</div>`}</div></div>`;
 }
 let pastIndex = 0;
 function pastView() {
@@ -2468,9 +3345,9 @@ function drawDialog() {
     <div class="field"><label for="f-bmin">Custom</label><div class="input"><input id="f-bmin" inputmode="numeric" value="${esc(d.custom || (BOMB_TIMES.includes(d.minutes) ? "" : String(d.minutes)))}"></div></div>
     <p class="err" id="f-err"></p>
     <div class="actions">${bomb ? `<button class="btn" data-x="bomb-stop">Stop Timer</button>` : `<button class="btn" data-x="cancel">Cancel</button>`}<button class="btn" data-x="bomb-now">Bomb Pot Now!</button><button class="btn primary" data-x="bomb-start">Start Timer</button></div>`;
-  if (d.k === "chip-edit") { const set = ChipSet.normalize(store.get(CKEY)) || DEFAULT_CHIPS, k = CHIP_COLORS[d.color], canRemove = !d.isNew && set.length > ChipSet.MIN;
+  if (d.k === "chip-edit") { const set = d.rid != null ? playerChips(d.rid) || curChips() : curChips(), k = CHIP_COLORS[d.color], canRemove = !d.isNew && set.length > ChipSet.MIN;
     const takenC = set.filter((x, j) => j !== d.i).map(x => x.color), takenV = set.filter((x, j) => j !== d.i).map(x => x.cents);
-    body = `<div class="deal-ann">${chipHTML({ color: k.hex, text: k.text, edge: k.edge, label: chipLabel(d.cents) }).replace('class="chip"', 'class="chip chip-big"')}<h2>${d.isNew ? `New Chip (${d.i + 1} of ${ChipSet.MAX})` : `${esc(k.name)} Chip`}</h2></div>
+    body = `<div class="deal-ann">${chipHTML({ color: k.hex, text: k.text, edge: k.edge, label: chipLabel(d.cents) }).replace('class="chip"', 'class="chip chip-big"')}<h2>${d.isNew ? `New Chip (${d.i + 1} of ${ChipSet.MAX})` : `${esc(k.name)} Chip`}</h2>${d.rid != null ? `<p class="sub">${esc(ownerName(d.rid))}'s chips</p>` : ""}</div>
     <div class="field"><span class="lbl">Color</span><div class="swatches" role="group" aria-label="Chip color">${Object.entries(CHIP_COLORS).map(([key, c]) =>
       `<button type="button" class="swatch" data-cc="${key}" style="--c:${c.hex};${c.edge ? `--e:${c.edge};--r:${c.edge}` : ""}" aria-pressed="${key === d.color}" ${takenC.includes(key) ? "disabled" : ""} aria-label="${c.name}${takenC.includes(key) ? " (used by another chip)" : ""}" title="${c.name}"></button>`).join("")}</div></div>
     <div class="field"><span class="lbl">Value</span><div class="choices cv-pick" role="group" aria-label="Chip value">${CHIP_VALUES.map(v =>
@@ -2479,6 +3356,19 @@ function drawDialog() {
     <p class="sub" id="cc-worth">${esc(k.name)} chips worth ${Money.fmt((Chips.parseCount(d.count) || 0) * d.cents)}</p>
     <p class="err" id="f-err"></p>
     <div class="actions">${canRemove ? `<button class="btn danger-ghost" data-x="chip-remove">Remove Chip</button>` : ""}<button class="btn" data-x="cancel">Cancel</button><button class="btn primary" data-x="chip-save">${d.isNew ? "Add Chip" : "Save"}</button></div>`; }
+  if (d.k === "egg-reset") body = `<h2>Reset Secret Games</h2>
+    <p class="sub">Clears every bankroll, both secret boards, the saved tables and the jackpot.</p>
+    <div class="field"><label for="f-code">Code</label><div class="input"><input id="f-code" inputmode="numeric" autocomplete="off"></div></div>
+    <p class="err" id="f-err"></p>
+    <div class="actions"><button class="btn" data-x="cancel">Cancel</button><button class="btn danger" data-x="egg-reset-ok">Reset</button></div>`;
+  if (d.k === "chip-sets") { const cs = chipSets(), live = sessionLive(), roster = [...getRoster()].sort((a, b) => a.name.localeCompare(b.name));
+    const row = (rid, name, set) => `<button type="button" class="cs-row" data-x="chips-use" data-r="${rid == null ? "" : rid}" aria-pressed="${cs.owner === rid}" ${live ? "disabled" : ""}>
+      <span class="cs-mini">${set.map(c => { const k = CHIP_COLORS[c.color]; return `<i style="--c:${k.hex};${k.edge ? `--e:${k.edge}` : ""}"></i>`; }).join("")}</span><b>${esc(name)}</b><small class="num">${Money.fmt(ChipSet.value(set))}</small></button>`;
+    const sets = roster.filter(r => cs.sets[r.id] || cs.owner === r.id);
+    body = `<h2>Chip Sets</h2>${live ? `<p class="sub">Finish the session in progress to switch chips.</p>` : ""}
+    <div class="cs-list">${row(null, "Default", cs.owner == null ? curChips() : cs.base || DEFAULT_CHIPS)}${sets.map(r => row(r.id, r.name, r.id === cs.owner ? curChips() : cs.sets[r.id])).join("")}</div>
+    ${roster.length && !live ? `<div class="field"><span class="lbl">Save Current Chips As</span><div class="choices roster-pick">${roster.map(r => `<button type="button" class="choice" data-x="chips-saveas" data-r="${r.id}">${esc(r.name)}</button>`).join("")}</div></div>` : ""}
+    <div class="actions"><button class="btn primary" data-x="cancel">Done</button></div>`; }
   if (d.k === "curtis-more-ask") { const rr = ledger.curtisRounds;
     body = `<div class="deal-ann">${wheelSVG(0, true)}<h2>Play Another Curtis Game?</h2>
 </div>
@@ -3031,12 +3921,16 @@ document.addEventListener("click", e => {
       case "import": return openDialog({ k: "import" });
       case "curtis-info": return openDialog({ k: "curtis-rules", game: a.dataset.game || ledger.curtisGame, back: null });
       case "share-settle": return shareMessage(Report.shareText(ledger), "Settle Up");
-      case "chip-add": { const set = ChipSet.normalize(store.get(CKEY)) || DEFAULT_CHIPS; if (set.length >= ChipSet.MAX) return;
+      case "chip-add": { const rid = a.dataset.r ? Number(a.dataset.r) : null, set = rid != null ? playerChips(rid) : curChips(); if (!set || set.length >= ChipSet.MAX) return;
         const color = Object.keys(CHIP_COLORS).find(k => !set.some(c => c.color === k)), top = Math.max(...set.map(c => c.cents));
         const cents = CHIP_VALUES.find(v => v > top && !set.some(c => c.cents === v)) || CHIP_VALUES.find(v => !set.some(c => c.cents === v));
-        return openDialog({ k: "chip-edit", i: set.length, cents, color, count: "", isNew: true }); }
-      case "chip-edit": { const set = ChipSet.normalize(store.get(CKEY)) || DEFAULT_CHIPS, i = Number(a.dataset.i), c = set[i];
-        return openDialog({ k: "chip-edit", i, cents: c.cents, color: c.color, count: c.count ? String(c.count) : "" }); }
+        return openDialog({ k: "chip-edit", i: set.length, cents, color, count: "", isNew: true, rid }); }
+      case "chip-edit": { const rid = a.dataset.r ? Number(a.dataset.r) : null, set = rid != null ? playerChips(rid) : curChips(), i = Number(a.dataset.i), c = set && set[i]; if (!c) return;
+        return openDialog({ k: "chip-edit", i, cents: c.cents, color: c.color, count: c.count ? String(c.count) : "", rid }); }
+      case "chips-setup": { const rid = Number(a.dataset.r); putPlayerChips(rid, curChips().map(c => ({ ...c }))); render(); return toast(`${ownerName(rid)} has a chip set. Tap a chip to change it.`); }
+      case "chips-use": return useChips(a.dataset.r ? Number(a.dataset.r) : null);
+      case "chips-drop": { const rid = Number(a.dataset.r), cs = chipSets(); if (cs.owner === rid) { if (sessionLive()) return toast("Finish the session in progress first."); const r = ChipSets.use(cs, curChips(), null); store.set(CKEY, r.set); ChipSet.apply(r.set); Object.assign(cs, r.cs); }
+        delete cs.sets[rid]; store.set(SKEY, cs); render(); return toast(`${ownerName(rid)}'s chip set removed`); }
       case "planpay": { const t = (Report.settleUp(ledger) || [])[Number(a.dataset.i)]; if (!t) return render(); return openDialog({ k: "planpay", t, method: "VENMO" }); }
       case "rename": return openDialog({ k: "rename", pid });
       case "undo": return openDialog({ k: "undo" });
@@ -3149,13 +4043,19 @@ document.addEventListener("click", e => {
       unlockAudio(); setBomb(m); closeDialog(); render(); return toast(`Next bomb pot in ${m} minute${m === 1 ? "" : "s"}`); }
     case "bomb-now": unlockAudio(); closeDialog(); return fireBomb();
     case "bomb-stop": cancelBomb(); closeDialog(); render(); return toast("Bomb pot timer stopped");
-    case "chip-remove": { const set = (ChipSet.normalize(store.get(CKEY)) || DEFAULT_CHIPS).filter((c, j) => j !== d.i); const ok = ChipSet.normalize(set); if (!ok) return;
-      const gone = CHIPS[d.i]; store.set(CKEY, ok); ChipSet.apply(ok); closeDialog(); render(); return toast(`${gone.name} ${gone.label} chip removed`); }
+    case "chip-remove": { const from = d.rid != null ? playerChips(d.rid) : curChips(), gone = from[d.i], ok = ChipSet.normalize(from.filter((c, j) => j !== d.i)); if (!ok) return;
+      if (d.rid != null) putPlayerChips(d.rid, ok); else putChips(ok); closeDialog(); render(); return toast(`${CHIP_COLORS[gone.color].name} ${chipLabel(gone.cents)} chip removed`); }
     case "chip-save": { const n = Chips.parseCount($("#f-ccount").value); if (n == null) { $("#f-err").textContent = "Enter how many as a whole number."; return; }
-      const set = (ChipSet.normalize(store.get(CKEY)) || DEFAULT_CHIPS).map(c => ({ ...c })); set[d.i] = { cents: d.cents, color: d.color, count: n };   // d.i can be a new slot
+      const set = (d.rid != null ? playerChips(d.rid) || curChips() : curChips()).map(c => ({ ...c })); set[d.i] = { cents: d.cents, color: d.color, count: n };   // d.i can be a new slot
       const ok = ChipSet.normalize(set); if (!ok) { $("#f-err").textContent = "Each chip needs its own color and value."; return; }
-      store.set(CKEY, ok); ChipSet.apply(ok); closeDialog(); render();
+      if (d.rid != null) putPlayerChips(d.rid, ok); else putChips(ok); closeDialog(); render();
       return toast(`${CHIP_COLORS[d.color].name} ${chipLabel(d.cents)} chip saved${n ? `: ${n} (${Money.fmt(n * d.cents)})` : ""}`); }
+    case "egg-reset-ok": { if ($("#f-code").value.trim() !== EGG_RESET_CODE) { $("#f-err").textContent = "That's not it."; return; }
+      store.del(JKEY); closeDialog(); render(); return toast("Secret games reset"); }
+    case "chips-use": return useChips(x.dataset.r ? Number(x.dataset.r) : null);
+    case "chips-saveas": { const rid = Number(x.dataset.r); if (sessionLive()) return toast("Finish the session in progress first.");
+      const had = !!chipSets().sets[rid]; store.set(SKEY, ChipSets.saveAs(chipSets(), curChips(), rid)); closeDialog(); render();
+      return toast(`${had ? "Replaced" : "Saved"} ${ownerName(rid)}'s chips`); }
     case "export-share": return shareExport();
     case "export-download": return downloadExport();
     case "export-copy": return copyExport();
@@ -3205,6 +4105,795 @@ function showTrendPoint(el) {
 }
 document.addEventListener("click", e => { const tp = e.target.closest && e.target.closest("[data-tp]"); if (tp) showTrendPoint(tp); }, true);
 document.addEventListener("mouseover", e => { const tp = e.target.closest && e.target.closest("[data-tp]"); if (tp) showTrendPoint(tp); });
+// ===== Hidden blackjack table (opens after 7 quick taps on the Poker Bank title) =====
+// Completely separate from the bank: its own chips, its own saved stacks, nothing touches sessions or IOUs.
+/** The hidden games play for drachmas, kept apart from the real money on the poker leaderboard. */
+const Dr = { fmt: c => Money.fmt(c).replace("$", "₯"), signed: c => Money.signed(c).replace("$", "₯"), sym: t => String(t).replace(/\$(?=\d)/g, "₯") };
+let bj = null, bjD = null;   // bj: what's on screen; bjD: { records, table } (saved under JKEY)
+const BJ_DENOMS = [{ c: 50000, color: "#7B1FA2", edge: "#f4ead2", label: "500" }, { c: 10000, color: "#1c1c1c", edge: "#f4ead2", label: "100" },
+  { c: 2500, color: "#2E7D32", edge: "#f4ead2", label: "25" }, { c: 500, color: "#C62828", edge: "#f4ead2", label: "5" }, { c: 100, color: "#F4F4F4", edge: "#1E5BB8", text: "#141414", label: "1" }];
+const bjRng = () => { try { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] / 4294967296; } catch { return Math.random(); } };
+function bjValidTable(t, rids) {
+  try {
+    if (!t || typeof t !== "object" || !Array.isArray(t.shoe) || !Array.isArray(t.seats) || !Array.isArray(t.dealer) || t.seats.length > Blackjack.SEATS) return null;
+    if (!["bet", "insurance", "play", "dealer", "done"].includes(t.phase)) return null;
+    const ok = c => c && Blackjack.RANKS.includes(c.r) && Blackjack.SUITS.includes(c.s);
+    if (!t.shoe.every(ok) || !t.dealer.every(ok)) return null;
+    const seen = new Set();
+    for (const s of t.seats) {
+      if (!s || !rids.has(s.rid) || seen.has(s.rid) || !Number.isInteger(s.stack) || s.stack < 0 || !Array.isArray(s.hands)) return null; seen.add(s.rid);
+      if (!s.hands.every(h => h && Array.isArray(h.cards) && h.cards.every(ok) && Number.isInteger(h.bet))) return null;
+    }
+    if (t.phase === "play" && !(t.turn && t.seats[t.turn.seat] && t.seats[t.turn.seat].hands[t.turn.hand])) return null;
+    if (t.phase === "insurance" && !t.seats[t.ins]) return null;
+    return t;
+  } catch { return null; }
+}
+function uthValidTable(t, rids) {
+  try {
+    if (!t || typeof t !== "object" || !Array.isArray(t.seats) || !Array.isArray(t.dealer) || !Array.isArray(t.board) || !Array.isArray(t.deck) || t.seats.length > UTH.SEATS) return null;
+    if (!["bet", ...UTH.PLAYING, "done"].includes(t.phase)) return null;
+    const ok = c => c && Blackjack.RANKS.includes(c.r) && Blackjack.SUITS.includes(c.s);
+    if (![...t.dealer, ...t.board, ...t.deck].every(ok)) return null;
+    const seen = new Set();
+    for (const s of t.seats) {
+      if (!s || !rids.has(s.rid) || seen.has(s.rid) || !Number.isInteger(s.stack) || s.stack < 0 || !Array.isArray(s.hole) || !s.hole.every(ok)) return null; seen.add(s.rid);
+      if (![s.ante, s.trips, s.pocket, s.play].every(v => Number.isInteger(v) && v >= 0)) return null;
+    }
+    if (UTH.PLAYING.includes(t.phase) && !(t.seats[t.turn] && t.seats[t.turn].inHand && t.board.length === 5 && t.dealer.length === 2)) return null;
+    return t;
+  } catch { return null; }
+}
+function bjData() { const raw = store.get(JKEY) || {}, rids = new Set(getRoster().map(r => r.id)); return { records: Blackjack.cleanRecords(raw.records, rids), table: bjValidTable(raw.table, rids), uth: uthValidTable(raw.uth, rids), jackpot: Blackjack.cleanPot(raw.jackpot) }; }
+function bjPot() { return bjData().jackpot; }
+function bjRecords() { return bjData().records; }
+function bjSave() { if (bjD) store.set(JKEY, { records: bjD.records, table: bjD.table, uth: bjD.uth, jackpot: bjD.jackpot }); }
+const isUTH = () => !!(bj && bj.game === "uth");
+const bjT = () => bjD && (isUTH() ? bjD.uth : bjD.table);
+const bjName = rid => (getRoster().find(r => r.id === rid) || {}).name || "Player";
+const bjPlayer = rid => getRoster().find(r => r.id === rid) || { name: "Player" };
+
+function bjOpen(game = "bj") {
+  if (bj) return;
+  bjD = bjData();
+  bj = { game, sel: 0, hint: null, timer: null };
+  const t = bjT();
+  Object.assign(bj, { screen: t && t.seats.length ? "table" : "pick", seenN: t ? t.n : 0, holeShown: t ? !t.hole : false });
+  closeDialog(); drawBJ();
+  if (t && t.phase === "dealer") bjDealer();
+}
+function bjClose() { if (!bj) return; clearTimeout(bj.timer); clearTimeout(bj.sayTimer); clearTimeout(bj.ritualTimer); bjSave(); bj = null; bjD = null; $("#bj").innerHTML = ""; render(); }
+/** The seat whose chips and buttons are shown at the bottom. */
+function bjCur() { const t = bjT(); if (!t || !t.seats.length) return -1; if (isUTH() && UTH.PLAYING.includes(t.phase)) return t.turn; if (t.phase === "play") return t.turn.seat; if (t.phase === "insurance") return t.ins; return Math.min(Math.max(bj.sel, 0), t.seats.length - 1); }
+/** A player's bankroll, shared by both games. */
+function bjRec(rid) {
+  if (!bjD.records[rid]) bjD.records[rid] = { stack: Blackjack.BUYIN, bought: Blackjack.BUYIN, updated: Date.now() };
+  return bjD.records[rid];
+}
+/** One game's tally of chips won and lost for a player. */
+function bjTally(rid, game) {
+  const r = bjRec(rid);
+  if (!r[game]) { r[game] = { net: 0, best: 0 }; for (const f of Blackjack.GAME_FIELDS[game]) r[game][f] = 0; }
+  return r[game];
+}
+/** The least a player can sit down with: one minimum bet (blackjack) or Ante + Blind + a 1x Play (hold'em). */
+const bjTableMin = () => (isUTH() ? UTH.need(UTH.ANTE_MIN, 0, 0) : Blackjack.MIN);
+/** Chips a seated player left in their bankroll, away from the table. */
+const bjReserve = s => (Number.isInteger(s.reserve) && s.reserve > 0 ? s.reserve : 0);
+/**
+ * Sitting down: a new player, or one whose bankroll can't cover the table minimum, buys in for ₯500.
+ * Anyone else chooses how much of their bankroll to bring.
+ */
+function bjSitFlow(rid) {
+  if (!bjFreeSeat(rid)) return;
+  const fresh = !bjD.records[rid], r = bjRec(rid), G = isUTH() ? UTH : Blackjack;
+  if (!fresh && r.stack < bjTableMin()) { r.bought += G.BUYIN; r.stack += G.BUYIN; r.updated = Date.now(); bjSeat(rid, r.stack); return toast(`${bjName(rid)} buys in for ${Dr.fmt(G.BUYIN)}`); }
+  if (fresh) { bjSeat(rid, r.stack); return toast(`${bjName(rid)} buys in for ${Dr.fmt(G.BUYIN)}`); }
+  bj.amt = { rid, mode: "sit", max: r.stack, value: r.stack }; bj.screen = "amount"; drawBJ();
+}
+/** Seat a player with an amount; the rest of their bankroll waits off the table. */
+function bjSeat(rid, amount) {
+  const r = bjRec(rid), uth = isUTH();
+  if (uth && !bjD.uth) { bjD.uth = UTH.newTable(); bj.seenN = 0; }
+  if (!uth && !bjD.table) { bjD.table = Blackjack.newTable(bjRng); bj.seenN = 0; }
+  const t = bjT(); let i;
+  if (!bjDo(() => { i = (uth ? UTH : Blackjack).sit(t, rid, amount); })) return false;
+  t.seats[i].reserve = r.stack - amount; bj.sel = i; bjSave(); bj.screen = "table"; drawBJ(); return true;
+}
+/** The amount picker: how much to sit down with, or to bring back from the bankroll after going broke. */
+function bjAmountHTML() {
+  const a = bj.amt, name = bjName(a.rid), min = bjTableMin(), picks = [10000, 25000, 50000].filter(c => c >= min && c < a.max);
+  return `<div class="bj-pick bj-amt"><h2>${a.mode === "sit" ? `${esc(name)} Sits Down` : `${esc(name)}: Bring More`}</h2>
+    <p class="bj-bank">Bankroll <b class="num">${Dr.fmt(a.max)}</b></p>
+    <div class="field"><label for="bj-amt-in">Bring to the table</label><div class="input"><span>₯</span><input id="bj-amt-in" inputmode="decimal" value="${Money.field(a.value)}"></div></div>
+    <div class="choices">${picks.map(c => `<button type="button" class="quick" data-bj="amt-pick:${c}">${Dr.fmt(c).replace(".00", "")}</button>`).join("")}<button type="button" class="quick" data-bj="amt-pick:${a.max}">All</button></div>
+    <p class="err" id="bj-amt-err"></p>
+    <div class="bj-acts"><button class="btn" data-bj="amt-back">Back</button><button class="btn primary" data-bj="amt-ok">${a.mode === "sit" ? "Sit Down" : "Bring It"}</button></div></div>`;
+}
+/** Shared by both tables: the amount picker's buttons and the broke player's rebuy. Returns true when handled. */
+function bjMoneyAction(k, v) {
+  const t = bjT();
+  if (k === "amt-pick") { bj.amt.value = Number(v); drawBJ(); return true; }
+  if (k === "amt-back") { const top = bj.amt && bj.amt.mode === "top"; bj.amt = null; bj.screen = top || (t && t.seats.length) ? "table" : "pick"; drawBJ(); return true; }
+  if (k === "amt-ok") {
+    const a = bj.amt, c = Money.parse($("#bj-amt-in").value.replace("₯", "")), min = bjTableMin(), err = m => { const e = $("#bj-amt-err"); if (e) e.textContent = m; };
+    if (c == null || c % 100) return err("Enter whole dollars."), true;
+    if (c < min) return err(`At least ${Dr.fmt(min)}.`), true;
+    if (c > a.max) return err(`${bjName(a.rid)} only has ${Dr.fmt(a.max)}.`), true;
+    bj.amt = null;
+    if (a.mode === "sit") { if (bjSeat(a.rid, c)) toast(`${bjName(a.rid)} sits down with ${Dr.fmt(c)}`); return true; }
+    const s = t && t.seats.find(x => x.rid === a.rid); if (!s) { bj.screen = "table"; drawBJ(); return true; }
+    if (t.phase === "done") (isUTH() ? UTH : Blackjack).newRound(t);
+    s.stack += c; s.reserve = bjReserve(s) - c; bjSave(); bj.screen = "table"; drawBJ(); toast(`${bjName(a.rid)} brings ${Dr.fmt(c)} more`); return true;
+  }
+  if (k === "rebuy") {
+    const i = bjCur(), s = t.seats[i], G = isUTH() ? UTH : Blackjack, min = bjTableMin();
+    if (bjReserve(s) >= min) { bj.amt = { rid: s.rid, mode: "top", max: bjReserve(s), value: bjReserve(s) }; bj.screen = "amount"; drawBJ(); return true; }
+    if (t.phase === "done") G.newRound(t);
+    if (!bjDo(() => G.rebuy(t, i))) return true;
+    const r = bjRec(s.rid); r.bought += G.BUYIN; r.stack = s.stack + bjReserve(s); r.updated = Date.now();
+    bjSave(); drawBJ(); toast(`${bjName(s.rid)} takes another ${Dr.fmt(G.BUYIN)}`); return true;
+  }
+  return false;
+}
+/** A player can only sit at one of the hidden tables at a time (they share a bankroll). Between hands, they're moved over. */
+function bjFreeSeat(rid) {
+  const other = isUTH() ? bjD.table : bjD.uth, G = isUTH() ? Blackjack : UTH;
+  const i = other ? other.seats.findIndex(s => s.rid === rid) : -1; if (i < 0) return true;
+  if (other.phase !== "bet" && other.phase !== "done") { toast(`${bjName(rid)} is still in a hand at the other table.`); return false; }
+  const away = bjReserve(other.seats[i]); bjRec(rid).stack = G.leave(other, i) + away;
+  if (!other.seats.length) { if (isUTH()) bjD.table = null; else bjD.uth = null; }
+  return true;
+}
+/** After each hand: everyone's new stack and record is saved straight away. */
+function bjRecord() {
+  const t = bjT(); if (!t || t.phase !== "done" || t.recorded === t.round) return;
+  for (const s of t.seats) {
+    if (s.net == null || !s.hands.length) continue;
+    const rec = bjRec(s.rid), r = bjTally(s.rid, "bj"); rec.stack = s.stack + bjReserve(s); rec.updated = Date.now();
+    r.hands += s.hands.length; r.net += s.net; r.best = Math.max(r.best, s.net);
+    if (s.sides && s.sides.prog && s.sides.prog.hand === "jackpot") r.jackpots++;
+    for (const h of s.hands) { if (h.result === "win" || h.result === "blackjack") r.wins++; else if (h.result === "push") r.pushes++; else r.losses++; if (h.result === "blackjack") r.bjs++; }
+  }
+  sfxResult(t.seats.filter(s => s.net != null && s.hands.length).map(s => s.net), 10000);
+  t.recorded = t.round;
+}
+function bjAfter() {   // after any move: dealer's turn plays itself out, a finished hand is recorded
+  const t = bjT(); bj.hint = null;
+  if (t.phase === "dealer") bjDealer();
+  if (t.phase === "done") { bjRecord(); bjEndTalk(t); }
+  bjSave(); drawBJ();
+}
+function bjDealer() {
+  clearTimeout(bj.timer);
+  const step = () => { if (!bj) return; const t = bjT(); if (!t || t.phase !== "dealer") return;
+    const had = t.dealer.length; Blackjack.dealerStep(t); if (t.dealer.length > had) sfx("card"); if (t.phase === "done") { bjRecord(); bjEndTalk(t); } bjSave(); drawBJ();
+    if (t.phase === "dealer") bj.timer = setTimeout(step, 750); };
+  bj.timer = setTimeout(step, 750);
+}
+// ---- the dealer talks: big wins and off-book plays
+const BJ_LINES = {
+  jackpot: ["Jackpot! Somebody call security. Kidding. Mostly.", "Seven, seven, seven. Drinks are on {name}.", "And there goes the meter. Congratulations, {name}."],
+  sevens: ["Three sevens! The pit boss felt that.", "Lucky sevens, {name}. That's {amount}.", "Sevens all around. Not bad, {name}."],
+  tt: ["{hand} on the 21+3. That's {amount}, {name}.", "Look at that {hand}. I'll allow it.", "{name} hits the {hand}. The side bet pays."],
+  blackjack: ["Blackjack! Three to two, {name}.", "Ace and paint. Beautiful.", "Natural 21. Don't get used to it.", "{name} with the blackjack. Show-off."],
+  big: ["{name} is cleaning me out tonight.", "Big win. I'm checking your sleeves.", "That's {amount}, {name}. Tip the dealer?", "Somebody's running hot."],
+  hit17: ["Hitting {total}? Bold.", "{total} and you hit. I respect the chaos.", "The book just fainted, {name}."],
+  hitBad: ["The book says stand on {total} against a {up}.", "Hitting there? Brave, {name}.", "I'd have stood. But I'm just the dealer."],
+  standBad: ["Standing on {total} against a {up}? Brave.", "The book says hit, {name}. The book is sad.", "Staying put on {total}. Bold strategy."],
+  noDouble: ["That was a double, {name}. Just saying.", "Leaving money on the table there.", "The book doubles that one."],
+  dblBad: ["Doubling on {total}? High-roller energy.", "Doubling there? Okay, big spender.", "The book wouldn't double that. Good luck."],
+  split10: ["Splitting tens? Who hurt you?", "You had 20, {name}. Twenty!", "Breaking up a perfectly good 20. Bold."],
+  splitBad: ["Splitting {rank}s? Interesting choice.", "The book keeps those together.", "Splitting {rank}s. We'll see."],
+  noSplitAE: ["Always split aces and eights, {name}.", "Those {rank}s wanted to be split.", "The book splits {rank}s. Every time."],
+  noSplit: ["The book splits {rank}s against a {up}.", "Those were splitters, {name}.", "Keeping them together? Okay."],
+  insurance: ["Insurance? The book says never. But thank you!", "Insurance is the house's favorite bet.", "Insured. The house appreciates it."],
+  shoe: ["Clean hands, fresh shoe.", "Fresh shoe. Good luck, everyone.", "New shoe, same dealer."],
+  // went against the book and still won
+  offWin: ["Wrong play, right result. I'll allow it.", "Against the book and it still works. Don't tell anyone.", "The book is shaking its head, but you're up {amount}.",
+    "Lucky, {name}. Very lucky.", "Not how the book plays it, but the chips don't care.", "Even a broken clock, {name}."],
+  // followed the dealer's hint and still lost: a word from the math
+  hintBackfire: ["The book wins in the long run. Tonight was the short run.", "That play wins more often than not. This wasn't one of those times.",
+    "Statistically correct. Emotionally devastating.", "Over a million hands, that's the right call. Over one hand, sorry, {name}.",
+    "Even perfect play leaves the house about half a percent. You just met it.", "Blame the math, not the messenger."],
+  // played every decision by the book and still lost
+  unlucky: ["You played it right, {name}. The cards didn't.", "Textbook play. Rough result.", "Nothing you could do there.",
+    "Right play, wrong card. That's blackjack.", "You did everything right. Sorry, {name}.", "Good decisions, bad luck. It evens out."],
+  // the Hint button: the dealer gives the book play
+  hint_hit: ["The book says hit {total} against a {up}.", "Take a card, {name}.", "I'd hit that {total}."],
+  hint_stand: ["Stand on {total}. Let me bust.", "The book stands on {total} against a {up}.", "{total} is enough. Stand."],
+  hint_double: ["Double it, {name}. Good spot.", "The book doubles {total} against a {up}.", "This is a double. Trust me."],
+  hint_split: ["Split those {rank}s.", "The book splits {rank}s against a {up}.", "Split them, {name}."],
+};
+const bjAtTable = () => !!(bj && bj.screen === "table" && bjT() && bjT().seats.length);
+/** Any message while at the table: the dealer says it in the speech bubble. */
+function bjSayText(text) {
+  bj.say = { text: Dr.sym(text), id: (bj.sayId = (bj.sayId || 0) + 1) };
+  clearTimeout(bj.sayTimer); bj.sayTimer = setTimeout(() => { if (bj) { bj.say = null; drawBJ(); } }, 5000);
+  drawBJ();
+}
+function bjSay(kind, vars = {}) {
+  if (!bj) return;
+  const pool = (isUTH() ? UTH_LINES : BJ_LINES)[kind]; if (!pool) return;
+  let line = pool[Math.floor(Math.random() * pool.length)];
+  if (pool.length > 1 && line === bj.lastLine) line = pool[(pool.indexOf(line) + 1) % pool.length];   // never the same line twice in a row
+  bj.lastLine = line;
+  clearTimeout(toastTimer); $("#toast").innerHTML = "";   // the dealer's bubble replaces any message on screen
+  let text = line.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
+  if (vars.name && !line.includes("{name}") && bjT() && bjT().seats.length > 1) text = `${vars.name}, ${/^[A-Z][a-z]/.test(text) && !/^(I|I'm|I've|I'd)\b/.test(text) ? text[0].toLowerCase() + text.slice(1) : text}`;   // who it's for
+  bj.say = { text: Dr.sym(text), id: (bj.sayId = (bj.sayId || 0) + 1) };
+  clearTimeout(bj.sayTimer); bj.sayTimer = setTimeout(() => { if (bj) { bj.say = null; drawBJ(); } }, 5000);
+}
+/** Right after the deal: jackpot, three 7s, a big 21+3 hand or a blackjack get a word from the dealer (the biggest one). */
+function bjDealTalk(t) {
+  const picks = [];
+  t.seats.forEach(s => {
+    const name = bjName(s.rid), sd = s.sides || {};
+    if (sd.prog && sd.prog.hand === "jackpot") picks.push([5, "jackpot", { name, amount: Dr.fmt(sd.prog.paid) }]);
+    if (sd.prog && sd.prog.hand === "sevens") picks.push([4, "sevens", { name, amount: Dr.fmt(sd.prog.paid) }]);
+    if (sd.tt && sd.tt.hand && Blackjack.TT_PAYS[sd.tt.hand] >= 10) picks.push([3, "tt", { name, hand: Blackjack.TT_NAMES[sd.tt.hand], amount: Dr.fmt(sd.tt.paid - sd.tt.bet) }]);
+    if (s.hands.length && Blackjack.value(s.hands[0].cards).bj) picks.push([2, "blackjack", { name }]);
+  });
+  if (!picks.length) return false;
+  picks.sort((a, b) => b[0] - a[0]); bjSay(picks[0][1], picks[0][2]); bj.saidRound = t.round; return true;
+}
+/** When the hand is over: a big win (at least $50, or 4x the bet) gets a word, if nothing was said at the deal. */
+/** This hand's decisions for one player: { book, off, followed }. */
+function bjTrack(t, rid) {
+  if (!bj.track || bj.track.round !== t.round) bj.track = { round: t.round, by: {} };
+  return bj.track.by[rid] || (bj.track.by[rid] = { book: 0, off: 0, followed: false });
+}
+/** What the cards themselves won or lost (side bets and insurance left out): the play is judged on this. */
+const bjHandsNet = s => s.hands.reduce((a, h) => a + h.paid - h.bet, 0);
+function bjEndTalk(t) {
+  const lucky = bj.off && bj.off.round === t.round ? t.seats.filter(s => bj.off.rids.includes(s.rid) && s.hands.length && bjHandsNet(s) > 0).sort((a, b) => bjHandsNet(b) - bjHandsNet(a))[0] : null;
+  if (lucky) { bjSay("offWin", { name: bjName(lucky.rid), amount: Dr.fmt(bjHandsNet(lucky)) }); bj.saidRound = t.round; return; }
+  const tr = bj.track && bj.track.round === t.round ? bj.track.by : {};
+  const losers = t.seats.filter(s => s.net != null && s.hands.length && bjHandsNet(s) < 0 && tr[s.rid]);
+  const backfired = losers.find(s => tr[s.rid].followed);
+  if (backfired) { bjSay("hintBackfire", { name: bjName(backfired.rid) }); bj.saidRound = t.round; return; }
+  // played every decision by the book and lost anyway (not two hands in a row, so it doesn't nag)
+  const unlucky = losers.find(s => tr[s.rid].book > 0 && !tr[s.rid].off && !(s.insurance > 0));
+  if (unlucky && bj.unluckyRound !== t.round - 1) { bjSay("unlucky", { name: bjName(unlucky.rid) }); bj.saidRound = bj.unluckyRound = t.round; return; }
+  if (bj.saidRound === t.round) return;
+  const best = t.seats.filter(s => s.net != null && s.hands.length).map(s => ({ s, net: s.net, bet: s.hands[0].bet / (s.hands[0].doubled ? 2 : 1) }))
+    .filter(x => x.net >= 5000 || x.net >= 4 * x.bet).sort((a, b) => b.net - a.net)[0];
+  if (best) { bjSay("big", { name: bjName(best.s.rid), amount: Dr.fmt(best.net) }); bj.saidRound = t.round; }
+}
+// ---- the hand-clearing motion dealers make for the cameras after a fresh shoe
+const BJ_HAND = side => `<svg viewBox="0 0 100 150" aria-hidden="true"><defs><linearGradient id="bjskin${side}" x1="0" x2="1"><stop offset="0" stop-color="${side === "front" ? "#e8b48c" : "#d39a72"}"/><stop offset="1" stop-color="${side === "front" ? "#f3c6a0" : "#c58a62"}"/></linearGradient></defs>
+  ${[[20, 22, 46], [33, 10, 56], [47, 6, 60], [61, 14, 52]].map(([x, y, h]) => `<rect x="${x}" y="${y}" width="13" height="${h}" rx="6.5" fill="url(#bjskin${side})"/>${side === "back" ? `<ellipse cx="${x + 6.5}" cy="${y + 7}" rx="4" ry="5" fill="#f0d2bd"/>` : ""}`).join("")}
+  <rect x="18" y="52" width="58" height="56" rx="16" fill="url(#bjskin${side})"/><rect x="66" y="50" width="14" height="44" rx="7" transform="rotate(38 73 94)" fill="url(#bjskin${side})"/>${side === "back" ? `<ellipse cx="88" cy="62" rx="4" ry="5" transform="rotate(38 88 62)" fill="#f0d2bd"/>` : ""}
+  ${side === "front" ? `<path d="M28 82c12 6 26 6 40 0M30 94c10 4 22 4 34 0" stroke="#c98d68" stroke-width="1.6" fill="none" opacity=".7"/>` : `<path d="M30 60h40" stroke="#b07a55" stroke-width="1.4" opacity=".5"/>`}
+  <rect x="14" y="104" width="66" height="16" rx="3" fill="#f4f1ea"/><rect x="40" y="108" width="6" height="6" rx="3" fill="#c9b37a"/><rect x="12" y="118" width="70" height="32" fill="#141414"/></svg>`;
+function bjRitualHTML() {
+  // seen from the dealer's side: the backs of the hands first, then they turn to show the palms to the cameras
+  const hand = (cls) => `<div class="bj-hand3d ${cls}"><div class="face front">${BJ_HAND("back")}</div><div class="face back">${BJ_HAND("front")}</div></div>`;
+  return `<div class="bj-ritual" data-bj="ritual-skip" role="img" aria-label="The dealer shows clean hands to the cameras"><div class="bj-ritual-stage">${hand("left")}${hand("right")}</div><p>Fresh shoe</p></div>`;
+}
+function bjRitualEnd() {
+  if (!bj || !bj.ritual) return; clearTimeout(bj.ritualTimer); bj.ritual = false;
+  const t = bjT(); if (!bjDealTalk(t)) bjSay("shoe"); bjAfter();
+}
+function bjDo(fn) { try { fn(); return true; } catch (e) { if (e instanceof LedgerError) { toast(e.message); return false; } throw e; } }
+
+function bjAction(a) {
+  { const [k, v] = a.split(":"); if (k === "sound") { sfxToggle(); return drawBJ(); } if (SFX_FOR[k]) sfx(SFX_FOR[k]);
+    if (bjMoneyAction(k, v)) return; if (k === "sit") return bjSitFlow(Number(v)); }
+  if (isUTH() && uthAction(a)) return;
+  const t = bjT(), i = bj && bjCur(), seat = t && t.seats[i];
+  const [k, v] = a.split(":");
+  switch (k) {
+    case "noop": return;
+    case "close": return bjClose();
+    case "board": bj.screen = "board"; return drawBJ();
+    case "back": bj.screen = t && t.seats.length ? "table" : "pick"; return drawBJ();
+    case "pick": bj.screen = "pick"; return drawBJ();
+    case "seat": if (t && (t.phase === "bet" || t.phase === "done")) { bj.sel = Number(v); drawBJ(); } return;
+    case "chip": {
+      if (t.phase === "done") Blackjack.newRound(t);
+      if (bjDo(() => Blackjack.setBet(t, i, seat.bet + Number(v)))) { bjSave(); drawBJ(); } return;
+    }
+    case "clear": if (t.phase === "bet") { seat.bet = 0; seat.tt = 0; seat.prog = 0; bjSave(); drawBJ(); } return;
+    case "tt": {   // 21+3: + / − a dollar
+      if (t.phase === "done") Blackjack.newRound(t);
+      const next = Math.max(0, Math.min(Blackjack.SIDE_MAX, (seat.tt || 0) + (v === "up" ? 100 : -100)));
+      if (bjDo(() => Blackjack.setSide(t, i, "tt", next))) { bjSave(); drawBJ(); } return;
+    }
+    case "prog": { if (t.phase === "done") Blackjack.newRound(t); if (bjDo(() => Blackjack.setSide(t, i, "prog", seat.prog ? 0 : Blackjack.PROG_BET))) { bjSave(); drawBJ(); } return; }
+    case "deal": {
+      bj.say = null; clearTimeout(bj.sayTimer);   // last hand's remark doesn't carry into this one
+      if (t.phase === "done") Blackjack.newRound(t);
+      if (!bjDo(() => Blackjack.deal(t, bjRng, bjD.jackpot))) return;
+      if (t.shuffled) {   // fresh shoe: the dealer clears their hands for the cameras before the cards come out
+        bjSave(); bj.ritual = true; $("#bj").insertAdjacentHTML("beforeend", bjRitualHTML()); bj.ritualTimer = setTimeout(bjRitualEnd, 3200); return;
+      }
+      const said = bjDealTalk(t);
+      const wins = t.seats.filter(x => x.sides).flatMap(x => [x.sides.tt && x.sides.tt.paid ? `${bjName(x.rid)}: ${Blackjack.TT_NAMES[x.sides.tt.hand]} +${Dr.fmt(x.sides.tt.paid - x.sides.tt.bet)}` : "",
+        x.sides.prog && x.sides.prog.paid ? `${bjName(x.rid)}: ${Blackjack.PROG_NAMES[x.sides.prog.hand]} +${Dr.fmt(x.sides.prog.paid)}` : ""]).filter(Boolean);
+      if (wins.length && !said) toast(wins.join(" · "));
+      return bjAfter();
+    }
+    case "next": bj.say = null; clearTimeout(bj.sayTimer); Blackjack.newRound(t); bjSave(); return drawBJ();
+    case "hit": case "stand": case "double": case "split": {
+      const off = t.phase === "play" ? Blackjack.offBook(t, k) : null, offRid = t.phase === "play" ? t.seats[t.turn.seat].rid : null, who = offRid != null ? bjName(offRid) : "";
+      if (offRid != null) { const tr = bjTrack(t, offRid); if (off) tr.off++; else tr.book++;
+        if (bj.hintFor && bj.hintFor.round === t.round && bj.hintFor.rid === offRid) { if (bj.hintFor.move === k) tr.followed = true; bj.hintFor = null; } }
+      if (!bjDo(() => Blackjack.act(t, k))) return;
+      if (offRid != null) { const tl = bjTally(offRid, "bj"); tl.moves++; if (!off) tl.book++; }
+      if (off) { bjSay(off.kind, { name: who, total: off.total, up: off.up, rank: off.rank });
+        if (!bj.off || bj.off.round !== t.round) bj.off = { round: t.round, rids: [] }; bj.off.rids.push(offRid); }
+      return bjAfter();
+    }
+    case "ins": { const irid = t.seats[t.ins].rid, who = bjName(irid); if (bjDo(() => Blackjack.insurance(t, v === "yes"))) { const tl = bjTally(irid, "bj"); tl.moves++; if (v !== "yes") tl.book++; /* the book never insures */  if (v === "yes") bjSay("insurance", { name: who }); bjAfter(); } return; }
+    case "ritual-skip": return bjRitualEnd();
+    case "hint": {
+      const h = Blackjack.hint(t); if (!h) return;
+      bjTally(t.seats[t.turn.seat].rid, "bj").hints++;
+      bj.hintFor = { round: t.round, rid: t.seats[t.turn.seat].rid, move: h };   // the very next move tells us if they took the advice
+      const hand = t.seats[t.turn.seat].hands[t.turn.hand], v = Blackjack.value(hand.cards, false), u = t.dealer[0];
+      bjSay("hint_" + h, { name: bjName(t.seats[t.turn.seat].rid), total: v.soft && v.total < 21 ? `soft ${v.total}` : v.total,
+        up: u.r === "A" ? "ace" : ["J", "Q", "K"].includes(u.r) ? "10" : u.r, rank: Blackjack.cardValue(hand.cards[0]) === 10 ? "10" : hand.cards[0].r === "A" ? "ace" : hand.cards[0].r });
+      return drawBJ();
+    }
+    case "rules": bj.rules = v; return drawBJ();
+    case "rules-close": bj.rules = null; return drawBJ();
+    case "leave": {
+      let left; if (!bjDo(() => { left = Blackjack.leave(t, i); })) return;
+      const r = bjRec(seat.rid); r.stack = left + bjReserve(seat); r.updated = Date.now();
+      if (!t.seats.length) { bjD.table = null; bj.screen = "pick"; } else bj.sel = Math.min(i, t.seats.length - 1);
+      bjSave(); drawBJ(); return toast(`${bjName(seat.rid)} walks away with ${Dr.fmt(left)}`);
+    }
+  }
+}
+
+// ---- drawing
+function bjCard(c, hidden, cls = "") {
+  if (hidden) return `<span class="bjc back ${cls}" aria-label="Face-down card"></span>`;
+  const red = c.s === "♥" || c.s === "♦", anim = c.n > bj.seenN ? "deal" : "";
+  return `<span class="bjc ${red ? "red" : ""} ${anim} ${cls}" aria-label="${c.r}${c.s}"><span class="ix"><b>${c.r}</b><i>${c.s}</i></span><span class="pip">${c.s}</span></span>`;
+}
+function bjTotal(cards, natural) {
+  const v = Blackjack.value(cards, natural);
+  if (v.bj) return `<span class="bj-tot bj21">BJ</span>`;
+  if (v.bust) return `<span class="bj-tot bust">${v.total}</span>`;
+  return `<span class="bj-tot">${v.soft && v.total < 21 ? `${v.total - 10}/${v.total}` : v.total}</span>`;
+}
+/**
+ * A realistic chip stack for an amount: every denomination in one stack, biggest chips at the bottom, drawn in perspective.
+ * A big stack is thinned out evenly (every denomination still shows) so it stays a sensible height.
+ */
+function bjStackSVG(cents, small = false, cap = small ? 10 : 9) {
+  let left = cents; const counts = [];
+  for (const d of BJ_DENOMS) { const k = Math.floor(left / d.c); left -= k * d.c; if (k) counts.push({ d, k }); }
+  const total = counts.reduce((a, x) => a + x.k, 0);
+  if (!total) return small ? "" : `<svg width="1" height="1"></svg>`;
+  if (total > cap) { let room = cap - counts.length; const extra = counts.map(x => x.k - 1), sum = extra.reduce((a, b) => a + b, 0);
+    counts.forEach((x, i) => { x.k = 1 + (sum ? Math.floor(extra[i] * Math.max(0, room) / sum) : 0); }); }
+  const chips = counts.flatMap(x => Array(x.k).fill(x.d));   // biggest first: they sit at the bottom
+  const rx = small ? 9 : 21, ry = small ? 3.4 : 7.6, th = small ? 2.6 : 5.4, W = rx * 2 + 4, H = chips.length * th + ry * 2 + 6, cx = 2 + rx, base = H - ry - 2;
+  let o = "";
+  chips.forEach((c, j) => {
+    const y = base - j * th, top = y - th;
+    o += `<path d="M${cx - rx} ${top}V${y}A${rx} ${ry} 0 0 0 ${cx + rx} ${y}V${top}Z" fill="${c.color}"/>`;
+    [-.7, -.2, .3, .8].forEach(f => { const x = cx + ((f + (j % 2 ? .25 : 0)) > 1 ? f - 1.75 : f + (j % 2 ? .25 : 0)) * rx; const dy = ry * Math.sqrt(Math.max(0, 1 - ((x - cx) / rx) ** 2));
+      o += `<rect x="${(x - rx * .07).toFixed(2)}" y="${(top + dy).toFixed(2)}" width="${(rx * .14).toFixed(2)}" height="${th}" fill="${c.edge}" opacity=".9"/>`; });
+    o += `<path d="M${cx - rx} ${top}V${y}A${rx} ${ry} 0 0 0 ${cx + rx} ${y}V${top}Z" fill="url(#bjshade)"/>`;
+    if (j === chips.length - 1) o += `<ellipse cx="${cx}" cy="${top}" rx="${rx}" ry="${ry}" fill="${c.color}"/><ellipse cx="${cx}" cy="${top}" rx="${rx}" ry="${ry}" fill="none" stroke="${c.edge}" stroke-width="${rx * .16}" stroke-dasharray="${rx * .35} ${rx * .35}"/>`
+      + `<ellipse cx="${cx}" cy="${top}" rx="${rx * .6}" ry="${ry * .6}" fill="${c.color}" stroke="${c.edge}" stroke-width=".6"/>` + (small ? "" : `<text x="${cx}" y="${top + 2.8}" font-size="8" font-weight="700" text-anchor="middle" fill="${c.text || "#fff"}" style="font-family:var(--f-display)">${c.label}</text>`);
+  });
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true"><defs><linearGradient id="bjshade" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity=".3"/><stop offset=".45" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#000" stop-opacity=".35"/></linearGradient></defs>${o}</svg>`;
+}
+const BJ_DEALER_SVG = `<svg viewBox="0 0 210 150" aria-hidden="true"><defs>
+    <linearGradient id="bjsil" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#211b16"/><stop offset="1" stop-color="#070504"/></linearGradient>
+    <linearGradient id="bjrim" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8a7356" stop-opacity=".55"/><stop offset=".5" stop-color="#8a7356" stop-opacity="0"/><stop offset="1" stop-color="#8a7356" stop-opacity=".55"/></linearGradient></defs>
+  <path d="M8 150c2-24 10-40 26-49 12-7 28-11 44-14l8-3h38l8 3c16 3 32 7 44 14 16 9 24 25 26 49z" fill="url(#bjsil)"/>
+  <path d="M90 84h30l-2 10c-4 6-9 9-13 9s-9-3-13-9z" fill="#15110e"/>
+  <path d="M86 86l19 30 19-30-6-2-13 20-13-20z" fill="#e9e3d6" opacity=".92"/><path d="M98 98l7 4 7-4-2 6 2 6-7-4-7 4 2-6z" fill="#7a1622"/>
+  <path d="M86 86l-12 64M124 86l12 64" stroke="#2c241e" stroke-width="2"/>
+  <ellipse cx="105" cy="52" rx="25" ry="30" fill="url(#bjsil)"/><path d="M80 48c0-20 11-30 25-30s25 10 25 30c-3-9-12-15-25-15s-22 6-25 15z" fill="#0c0907"/>
+  <path d="M8 150c2-24 10-40 26-49 12-7 28-11 44-14l8-3h38l8 3c16 3 32 7 44 14 16 9 24 25 26 49" fill="none" stroke="url(#bjrim)" stroke-width="1.6"/>
+  <ellipse cx="105" cy="52" rx="25" ry="30" fill="none" stroke="url(#bjrim)" stroke-width="1.4"/></svg>`;
+function bjFeltPrint() {
+  return `<svg class="bj-print" viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true">
+    <defs><path id="bjarc1" d="M30 112 Q200 206 370 112"/><path id="bjarc2" d="M85 98 Q200 165 315 98"/></defs>
+    <text font-size="17" fill="#f2c94c" opacity=".85"><textPath href="#bjarc2" startOffset="50%" text-anchor="middle">BLACKJACK PAYS 3 TO 2</textPath></text>
+    <text font-size="8.6" fill="#f3efe4" opacity=".6"><textPath href="#bjarc1" startOffset="50%" text-anchor="middle">DEALER STANDS ON ALL 17s · INSURANCE PAYS 2 TO 1</textPath></text></svg>`;
+}
+function bjTableHTML() {
+  const t = bjT(), n = t.seats.length, cur = bjCur();
+  const feltH = Math.min(innerWidth * 1.08, innerHeight - 400, 540), sizes = ["lg", "md", "sm"];
+  // one player: the biggest cards; they shrink as players join (and on a shorter table)
+  const size = n === 1 ? (feltH >= 420 ? "xl" : feltH >= 300 ? "lg" : "md") : sizes[Math.min(2, (n <= 2 ? 0 : n <= 4 ? 1 : 2) + (feltH < 470 && n <= 4 ? 1 : 0))];
+  const dw = size === "xl" ? 56 : n <= 2 && feltH >= 300 ? 46 : 40;
+  const holeFlip = !t.hole && !bj.holeShown && t.dealer.length > 1;
+  const dealerCards = t.dealer.map((c, k) => bjCard(c, k === 1 && t.hole, k === 1 && holeFlip ? "flip" : "")).join("");
+  const seats = t.seats.map((s, i) => {
+    const spread = n >= 5 ? 156 : 140, th = ((180 - spread) / 2 + spread * (i + 0.5) / n) * Math.PI / 180, x = 50 + (n >= 5 ? 44 : 41) * Math.cos(th), y = n >= 5 ? 16 + 66 * Math.sin(th) : 33 + 57 * Math.sin(th);   // up to 4 players: y is where the seat's bottom sits
+    const hands = s.hands.map((h, j) => { const now = t.phase === "play" && t.turn.seat === i && t.turn.hand === j;
+      return `<div class="bj-hand ${now ? "now" : ""}">${h.cards.length ? bjTotal(h.cards, !h.split) : ""}<div class="bj-row">${h.cards.map(c => bjCard(c, false)).join("")}</div>${h.result ? `<span class="bj-res ${h.result}">${h.result === "blackjack" ? "Blackjack" : h.result}</span>` : ""}</div>`; }).join("");
+    const wager = s.hands.length ? s.hands.reduce((a, h) => a + h.bet, 0) : s.bet;
+    const p = bjPlayer(s.rid);
+    return `<button type="button" class="bj-seat ${size} ${n <= 4 ? "from-bottom" : ""} ${i === cur ? "sel" : ""}" data-bj="seat:${i}" style="left:${x.toFixed(1)}%;top:${n <= 4 ? `calc(${y.toFixed(1)}% + 14px)` : `${y.toFixed(1)}%`}" aria-label="${esc(p.name)}, ${Dr.fmt(s.stack)}">
+      <div class="bj-hands">${hands}</div>
+      <span class="bj-spot">${wager ? bjStackSVG(wager, true) : ""}${bjSideMarks(s)}</span>${s.insurance ? `<span class="bj-res push">Ins ${Dr.fmt(s.insurance)}</span>` : ""}
+      <span class="bj-name">${avatarHTML(p, "", true)}${esc(p.name)}</span></button>`;
+  }).join("");
+  bj.holeShown = !t.hole;
+  const say = bj.say ? `<div class="bj-say ${bj.say.id !== bj.sayDrawn ? "pop" : ""}" role="status">${esc(bj.say.text)}</div>` : "";
+  if (bj.say) bj.sayDrawn = bj.say.id;
+  return `<div class="bj-scene">${say}<div class="bj-dealer">${BJ_DEALER_SVG}</div>
+    <div class="bj-persp"><div class="bj-felt">${bjFeltPrint()}<div class="bj-shoe" aria-hidden="true"></div>
+      <div class="bj-pot" role="button" tabindex="0" data-bj="rules:jp" aria-label="Jackpot ${Dr.fmt(bjD.jackpot.amount)}. Rules"><small>Jackpot</small><b class="num">${Dr.fmt(bjD.jackpot.amount)}</b></div>
+      <div class="bj-dcards" style="--dw:${dw}px">${t.dealer.length ? `<div class="bj-row ${t.dealer.length > 4 ? "many" : ""}">${dealerCards}</div>${t.hole ? `<span class="bj-tot">${Blackjack.value([t.dealer[0]]).total}</span>` : bjTotal(t.dealer, true)}` : ""}</div>
+      ${seats}</div></div></div>`;
+}
+function bjSideMarks(s) {
+  const tt = s.sides ? s.sides.tt : s.tt ? { bet: s.tt } : null, pg = s.sides ? s.sides.prog : s.prog ? { bet: s.prog } : null;
+  const mark = (x, cls, label) => x ? `<i class="bj-mark ${cls} ${x.hand ? "won" : s.sides ? "lost" : ""}" role="button" tabindex="0" data-bj="rules:${cls}" aria-label="${label} rules">${cls === "tt" ? "21+3" : "J"}</i>` : "";
+  return mark(tt, "tt", "21+3") + mark(pg, "jp", "Jackpot");
+}
+function bjRailHTML() {
+  const t = bjT(), i = bjCur(), s = t.seats[i], p = bjPlayer(s.rid);
+  const sideTxt = s.sides ? [s.sides.tt ? (s.sides.tt.paid ? `21+3 ${Blackjack.TT_NAMES[s.sides.tt.hand]} +${Dr.fmt(s.sides.tt.paid - s.sides.tt.bet)}` : "") : "", s.sides.prog && s.sides.prog.paid ? `${Blackjack.PROG_NAMES[s.sides.prog.hand]} +${Dr.fmt(s.sides.prog.paid)}` : ""].filter(Boolean).join(" · ") : "";
+  const line = t.phase === "done" && s.net != null ? (s.net > 0 ? `won ${Dr.fmt(s.net)}` : s.net < 0 ? `lost ${Dr.fmt(-s.net)}` : "push")
+    : t.phase === "bet" && s.bet ? `bet ${Dr.fmt(s.bet + (s.tt || 0) + (s.prog || 0))}` : s.hands.length ? (sideTxt || `bet ${Dr.fmt(s.hands.reduce((a, h) => a + h.bet, 0) + s.insurance)}`) : "";
+  const cls = t.phase === "done" && s.net != null ? (s.net > 0 ? "up" : s.net < 0 ? "down" : "") : "";
+  const items = t.phase === "done" ? Blackjack.breakdown(t, s) : [];
+  const amt = a => (a > 0 ? "+" : a < 0 ? "−" : "") + Dr.fmt(Math.abs(a));
+  const brk = items.length > 1 || (items.length && items[0].amount !== s.net) ? `<div class="bj-break num">${items.map(x => `<span class="${x.amount > 0 ? "up" : x.amount < 0 ? "down" : ""}">${esc(x.label)} ${amt(x.amount)}</span>`).join("")}</div>` : "";
+  const playing = t.phase === "play" || t.phase === "insurance", hj = t.phase === "play" ? t.turn.hand : 0, ph = playing && s.hands[hj];
+  const total = ph ? (() => { const v = Blackjack.value(ph.cards, !ph.split); return `<div class="rail-total">${s.hands.length > 1 ? `<span>Hand ${hj + 1}</span>` : ""}<b class="num">${v.bj ? "Blackjack" : v.soft && v.total < 21 ? `Soft ${v.total}` : v.total}</b><span>vs ${t.dealer[0].r}</span></div>`; })() : "";
+  const who = total + `<div class="bj-who">${avatarHTML(p)}<div><b>${esc(p.name)}</b><small class="num ${cls}">${items.length ? (items.length === 1 ? `${esc(items[0].label)} ${amt(items[0].amount)}` : `Total ${amt(s.net)}`) : line}</small></div><span class="bj-net num">${Dr.fmt(s.stack)}</span></div>${brk}`;
+  const stack = brk ? "" : `<div class="bj-stack">${bjStackSVG(s.stack)}</div>`;   // after a hand, the breakdown takes the stack's place
+  const nb = Blackjack.betsNow(t, s);
+  const chips = BJ_DENOMS.filter(d => d.c >= Blackjack.MIN).reverse().map(d => `<button type="button" class="bj-chip" data-bj="chip:${d.c}" ${nb.bet + d.c > Blackjack.MAX || nb.bet + nb.tt + nb.prog + d.c > s.stack ? "disabled" : ""} aria-label="Bet ₯${d.label}">${chipHTML({ color: d.color, text: d.text, edge: d.edge === "#f4ead2" ? null : d.edge, label: d.label })}</button>`).join("");
+  const sub = (opts) => `<div class="bj-sub">${opts.join("")}</div>`;
+  const leave = `<button class="ghost" data-bj="leave">Walk Away</button>`, add = t.seats.length < Blackjack.SEATS ? `<button class="ghost" data-bj="pick">+ Add Player</button>` : "";
+  const broke = s.stack < Blackjack.MIN;
+  let body;
+  if (t.phase === "bet" || t.phase === "done") {
+    const anyBet = t.phase === "bet" ? t.seats.some(x => x.bet > 0) : t.seats.some(x => x.last && x.last <= x.stack);
+    const roomLeft = s.stack - nb.bet - nb.tt - nb.prog, live = nb.bet > 0;
+    const sides = broke ? "" : `<div class="bj-sides"><div class="bj-side"><span role="button" tabindex="0" data-bj="rules:tt" aria-label="21+3 rules">21+3</span><button type="button" class="step" data-bj="tt:down" aria-label="Less on 21+3" ${nb.tt ? "" : "disabled"}>−</button>
+      <b class="num">${Dr.fmt(nb.tt).replace(".00", "")}</b><button type="button" class="step" data-bj="tt:up" aria-label="More on 21+3" ${live && nb.tt < Blackjack.SIDE_MAX && roomLeft >= 100 ? "" : "disabled"}>+</button></div>
+      <button type="button" class="choice bj-jpbtn" data-bj="prog" aria-pressed="${!!nb.prog}" ${live && (nb.prog || roomLeft >= 100) ? "" : "disabled"}>Jackpot ₯1</button></div>`;
+    body = (broke ? `<div class="bj-acts"><button class="btn primary" data-bj="rebuy">${bjReserve(s) >= Blackjack.MIN ? `Bring More (${Dr.fmt(bjReserve(s))} Left)` : `Take Another ${Dr.fmt(Blackjack.BUYIN)}`}</button></div>` : `<div class="bj-chips">${chips}</div>${sides}`)
+      + `<div class="bj-acts">${t.phase === "done" ? `<button class="btn" data-bj="next">Next Hand</button>` : `<button class="btn" data-bj="clear" ${s.bet ? "" : "disabled"}>Clear Bet</button>`}<button class="btn primary" data-bj="deal" ${anyBet ? "" : "disabled"}>Deal</button></div>`
+      + sub([leave, add]);
+  } else if (t.phase === "insurance") {
+    const cost = Math.floor(s.hands[0].bet / 2);
+    body = `<p class="bj-msg">Insurance? (${Dr.fmt(cost)})</p><div class="bj-acts"><button class="btn" data-bj="ins:no">No</button><button class="btn primary" data-bj="ins:yes" ${cost > s.stack ? "disabled" : ""}>Yes</button></div>`;
+  } else if (t.phase === "play") {
+    const o = Blackjack.options(t), b = (m, label) => `<button class="btn ${m === "stand" ? "primary" : ""}" data-bj="${m}" ${o.includes(m) ? "" : "disabled"}>${label}</button>`;
+    body = `<div class="bj-acts">${b("hit", "Hit")}${b("stand", "Stand")}${b("double", "Double")}${b("split", "Split")}</div>${sub([`<button class="ghost" data-bj="hint">Hint</button>`])}`;
+  } else body = `<p class="bj-msg">Dealer's turn</p>`;
+  return `<div class="bj-rail ${t.phase === "bet" || t.phase === "done" ? "betting" : ""}">${who}${stack}${body}</div>`;
+}
+function bjPickHTML() {
+  const t = bjT(), seated = new Set(t ? t.seats.map(s => s.rid) : []), free = getRoster().filter(r => !seated.has(r.id)).sort((a, b) => a.name.localeCompare(b.name));
+  const list = free.map(r => { const rec = bjD.records[r.id]; return `<button type="button" data-bj="sit:${r.id}">${avatarHTML(r)}<span>${esc(r.name)}</span><small class="num">${Dr.fmt(rec ? rec.stack : Blackjack.BUYIN)}</small></button>`; }).join("");
+  return `<div class="bj-pick"><h2>${t && t.seats.length ? "Who's Joining?" : "Who's Playing?"}</h2>
+    ${!getRoster().length ? `<p>Create a player first.</p>` : free.length ? `<div class="bj-plist">${list}</div>` : `<p>Everyone is already at the table.</p>`}
+    ${t && t.seats.length ? `<button class="btn" data-bj="back">Back to the Table</button>` : ""}</div>`;
+}
+function bjBoardHTML() {
+  const uth = isUTH(), rows = Blackjack.standings(bjD.records, getRoster(), uth ? "uth" : "bj"), pl = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+  return `<div class="bj-pick bj-board"><h2>Leaderboard</h2>${rows.length ? `<ol>${rows.map((r, k) => `<li><span class="rk">${k + 1}</span>${avatarHTML(bjPlayer(r.rid))}<div><b>${esc(r.name)}</b>
+    <small class="num">${pl(r.hands, "hand")}${uth ? (r.royals ? ` · ${pl(r.royals, "royal")}` : "") : (r.bjs ? ` · ${pl(r.bjs, "blackjack")}` : "") + (r.jackpots ? ` · ${pl(r.jackpots, "jackpot")}` : "")}${r.moves ? ` · by the book ${Math.round(100 * r.book / r.moves)}%` : ""}${r.hints ? ` · ${pl(r.hints, "hint")}` : ""}</small></div>
+    <span class="amt num" style="color:${r.net > 0 ? "#7bd88f" : r.net < 0 ? "#ff8a8a" : "inherit"}">${Dr.signed(r.net)}</span></li>`).join("")}</ol>` : `<p>No hands played yet.</p>`}
+    <button class="btn" data-bj="back">Back</button></div>`;
+}
+function bjRulesHTML(k) {
+  const row = (a, b) => `<tr><td>${a}</td><td class="num">${b}</td></tr>`;
+  const body = k === "tt"
+    ? `<h2>21+3</h2><p>Your first two cards plus the dealer's up card, as a 3-card poker hand. Paid right after the deal. ₯1 to ₯25.</p>
+      <table class="bj-pay">${Object.keys(Blackjack.TT_PAYS).map(h => row(Blackjack.TT_NAMES[h], `${Blackjack.TT_PAYS[h]} to 1`)).join("")}</table><p class="bj-fine">A-2-3 and Q-K-A count as straights.</p>`
+    : `<h2>Jackpot <span class="num">${Dr.fmt(bjD.jackpot.amount)}</span></h2><p>₯1 a hand; half of every bet grows the jackpot. Your first two cards plus the dealer's up card.</p>
+      <table class="bj-pay">${row("Suited 7-7-7", "100% of jackpot")}${row("7-7-7", "10% of jackpot")}${row("Your first two cards are 7s", Dr.fmt(2500).replace(".00", ""))}${row("Your first card is a 7", Dr.fmt(300).replace(".00", ""))}</table>
+      <p class="bj-fine">The jackpot resets to ${Dr.fmt(Blackjack.PROG_SEED).replace(".00", "")} after it's won.</p>`;
+  return `<div class="bj-modal" data-bj="rules-close"><div class="bj-sheet" role="dialog" aria-label="${k === "tt" ? "21+3" : "Jackpot"} rules" data-bj="noop">${body}<div class="actions"><button class="btn primary" data-bj="rules-close">Close</button></div></div></div>`;
+}
+const SFX_ICON = on => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/>${on ? `<path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>` : `<path d="M17 9l5 6M22 9l-5 6"/>`}</svg>`;
+function drawBJ() {
+  const el = $("#bj"); if (!bj) { el.innerHTML = ""; return; }
+  if (bj.ritual) return;   // the hand-clearing ritual is playing; the table catches up when it ends
+  const t = bjT(), top = `<header class="bj-top"><button class="bj-x" data-bj="close" aria-label="Leave">×</button><span class="bj-top-r"><button class="bj-x bj-snd" data-bj="sound" aria-label="Sound ${sfxOn() ? "on" : "off"}" aria-pressed="${sfxOn()}">${SFX_ICON(sfxOn())}</button>${bj.screen === "table" ? `<button class="ghost" data-bj="board">Leaderboard</button>` : ""}</span></header>`;
+  let main = "", rail = "";
+  if (bj.screen === "table" && t && t.seats.length) { main = isUTH() ? uthTableHTML() : bjTableHTML(); rail = isUTH() ? uthRailHTML() : bjRailHTML(); }
+  else if (bj.screen === "board") main = bjBoardHTML();
+  else if (bj.screen === "amount" && bj.amt) main = bjAmountHTML();
+  else main = bjPickHTML();
+  const keepScroll = el.firstElementChild ? el.firstElementChild.scrollTop : 0;
+  el.innerHTML = `<div class="bj" role="dialog" aria-label="Card table">${top}${main}${rail || "<div></div>"}</div>${bj.rules ? (isUTH() ? uthRulesHTML(bj.rules) : bjRulesHTML(bj.rules)) : ""}`;
+  if (el.firstElementChild) el.firstElementChild.scrollTop = keepScroll;
+  if (t) bj.seenN = t.n;
+}
+document.addEventListener("click", e => { if (!bj) return; const b = e.target.closest && e.target.closest("#bj [data-bj]"); if (!b || b.disabled) return; e.stopPropagation();
+  if (bj.ritual && b.dataset.bj !== "ritual-skip") return; bjAction(b.dataset.bj); }, true);
+document.addEventListener("keydown", e => { if (!bj) return;
+  if (e.key === "Escape" && bj.rules) { bj.rules = null; drawBJ(); return; }
+  const r = e.target.closest && e.target.closest('#bj [role="button"][data-bj]'); if (r && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); bjAction(r.dataset.bj); } });
+// 7 quick taps on the Poker Bank title
+let bjTaps = [];
+document.addEventListener("click", e => {
+  const h = e.target.closest && e.target.closest("h1.home-title"); if (!h || bj || dialog) return;
+  if (h.textContent.trim().toLowerCase() !== "poker bank") return;
+  const now = Date.now(); bjTaps = bjTaps.filter(x => now - x < 2500); bjTaps.push(now);
+  if (bjTaps.length >= 7) { bjTaps = []; bjOpen(); }
+});
+// 7 quick taps on the Curtis Game title (Leaderboard page): the hold'em table
+let uthTaps = [];
+document.addEventListener("click", e => {
+  const h = e.target.closest && e.target.closest(".curtis-board h3"); if (!h || bj || dialog || view !== "players") return;
+  const now = Date.now(); uthTaps = uthTaps.filter(x => now - x < 2500); uthTaps.push(now);
+  if (uthTaps.length >= 7) { uthTaps = []; bjOpen("uth"); }
+});
+// 7 quick taps on the Leaderboard title: everyone's bankroll
+let bankTaps = []; var showBank = false;
+document.addEventListener("click", e => {
+  const h = e.target.closest && e.target.closest(".report-head h2"); if (!h || bj || dialog || view !== "players") return;
+  const now = Date.now(); bankTaps = bankTaps.filter(x => now - x < 2500); bankTaps.push(now);
+  if (bankTaps.length >= 7) { bankTaps = []; showBank = !showBank; render(); }
+});
+// Press and hold the Bankroll title: wipe the hidden games (asks for a code)
+const EGG_RESET_CODE = "777";
+{ let timer = null; const off = () => { clearTimeout(timer); timer = null; };
+  document.addEventListener("pointerdown", e => { const h = e.target.closest && e.target.closest(".egg-board h3[data-reset]"); if (!h || dialog || bj) return; off(); timer = setTimeout(() => { timer = null; bankTaps = []; openDialog({ k: "egg-reset" }); }, 700); });
+  ["pointerup", "pointercancel", "pointermove", "scroll"].forEach(ev => document.addEventListener(ev, e => { if (ev !== "pointermove" || Math.abs(e.movementX) + Math.abs(e.movementY) > 6) off(); }, true));
+  document.addEventListener("contextmenu", e => { if (e.target.closest && e.target.closest(".egg-board h3[data-reset]")) e.preventDefault(); }); }
+/** The mystery boards on the Leaderboard page: each shows once someone has played that game. */
+function eggBoardHTML() {
+  const recs = bjRecords(), roster = getRoster();
+  const list = (rows, val) => `<ol>${rows.map((r, k) => `<li><span class="rk num">${k + 1}</span>${avatarHTML(bjPlayer(r.rid))}<b>${esc(r.name)}</b>${val(r)}</li>`).join("")}</ol>`;
+  const signed = r => `<span class="amt num ${r.net > 0 ? "up" : r.net < 0 ? "down" : ""}">${Dr.signed(r.net)}</span>`;
+  const board = (title, rows, val) => rows.length ? `<aside class="egg-board" aria-label="${title}"><h3 ${title === "Bankroll" ? "data-reset" : ""}>${title}</h3>${list(rows, val)}</aside>` : "";
+  // a game's real name shows only once every player on the list has played it; a new player hides it again
+  const game = (mask, name, key) => { const rows = Blackjack.standings(recs, roster, key); return board(roster.length && rows.length === roster.length ? name : mask, rows, signed); };
+  const bank = showBank ? Blackjack.bankrolls(recs, roster) : [];
+  const html = (showBank ? (bank.length ? board("Bankroll", bank, r => `<span class="amt num">${Dr.fmt(r.stack)}</span>`) : `<aside class="egg-board" aria-label="Bankroll"><h3 data-reset>Bankroll</h3><p class="sub">Nobody yet.</p></aside>`) : "")
+    + game("???", "Blackjack", "bj") + game("????", "Ultimate Texas Hold'em", "uth");
+  return html ? `<div class="egg-col">${html}</div>` : "";
+}
+// ===== Ultimate Texas Hold'em: the second hidden table (same dealer, same bankroll) =====
+const UTH_LINES = {
+  // off-book moves, by the Wizard of Odds simple strategy
+  preCheck: ["{hand} is a 4x raise, {name}.", "The book raises {hand} four times.", "Checking {hand}? That's a raise."],
+  bet3: ["3x? It's 4x or check, {name}.", "Never 3x. The book always takes the 4x.", "Three times? Why not four?"],
+  preRaiseBad: ["4x with {hand}? The book checks that.", "{hand} isn't on the raising chart, {name}.", "Raising {hand}. Bold."],
+  flopCheck: ["{whyC}. That's a 2x bet, {name}.", "You checked {why}? The book bets.", "{whyC} bets the flop."],
+  flopBet: ["No hidden pair, no draw. The book checks.", "Betting into that flop? Brave.", "Nothing hidden there, {name}. The book checks."],
+  flopBetDeuces: ["Pocket 2s check the flop, {name}.", "The book checks deuces on the flop.", "Deuces are the one pair that waits."],
+  riverFold: ["Only {outs} of my cards beat you. That's a call.", "{outs} outs is under 21. Call it next time.", "Too good to fold, {name}. {outs} outs."],
+  riverFoldHidden: ["You had {why}. That's a call.", "Folding {why}? The book calls.", "{whyC} is always a call, {name}."],
+  riverCall: ["{outs} of my cards beat you. The book folds.", "Calling with {outs} outs against you? Generous.", "Over 20 outs. The book folds there, {name}."],
+  foldWin: ["You'd have won that, {name}. Don't look.", "Folded the winner. It happens.", "That one would've paid. Sorry, {name}."],
+  royal: ["Royal flush! Five hundred to one on the Blind!", "A royal, {name}. I've seen three in my whole career.", "Royal flush. Somebody frame that."],
+  monster: ["{hand}! The Blind pays, {name}.", "{hand}. That's {amount} on the Blind.", "Look at that {hand}, {name}."],
+  trips: ["{hand} on the Trips. That's {amount}.", "The Trips bet hits, {name}. {hand}.", "Trips loves a {hand}. {amount}."],
+  pocket: ["Pocket aces. Nice start, {name}.", "Aces! The Pocket Bonus likes that.", "Rockets, {name}. Don't get attached."],
+  aaAA: ["Aces against my aces! A thousand to one on the Pocket Bonus!", "We both had aces. That's {amount}, {name}.", "Pocket aces versus pocket aces. Call the pit boss."],
+  noQual: ["Dealer doesn't qualify. Antes push.", "No pair for me. Antes push.", "I didn't qualify. Antes come back."],
+  big: ["{name} is cleaning me out.", "That's {amount}, {name}. Tip the dealer?", "Big hand. I'm checking your sleeves.", "Somebody's running hot."],
+  offWin: ["Not the book play, but it worked. I'll allow it.", "Against the book and still up {amount}. Don't tell anyone.", "Lucky, {name}. Very lucky.", "Wrong play, right result."],
+  hintBackfire: ["The book wins in the long run. Tonight was the short run.", "That's the right play over a million hands. Not this one.",
+    "Statistically correct. Emotionally devastating.", "Perfect play still leaves the house about 2.2% of the Ante. You just met it.", "Blame the math, not the messenger."],
+  unlucky: ["You played it right, {name}. The cards didn't.", "Textbook play. Rough result.", "Nothing you could do there.", "Good decisions, bad luck. It evens out."],
+  // the Hint button
+  hint_bet4: ["{hand} is a 4x raise, {name}.", "The book bets 4x with {hand}.", "Raise it four times."],
+  hint_bet3: ["{hand} is a raise. 3x is what you can cover.", "Raise it, {name}. 3x is all you've got.", "The book raises {hand}. Go 3x."],
+  hint_check_broke: ["{hand} is a raise, but you can't cover it. Check.", "Not enough behind to raise, {name}. Check.", "Check. The chips aren't there for a raise."],
+  hint_check_pre: ["{hand} isn't a raise. Check.", "The book checks {hand} before the flop.", "Check. See the flop for free."],
+  hint_bet2: ["{whyC}. Bet 2x.", "You've got {why}. That's a 2x bet.", "Bet 2x, {name}. {whyC}."],
+  hint_check_flop: ["No hidden pair, no draw. Check.", "Nothing to bet yet. Check.", "Check and see the river, {name}."],
+  hint_check_deuces: ["Pocket 2s don't bet the flop. Check.", "Deuces wait. Check, {name}.", "The book checks 2s here."],
+  hint_bet1_hidden: ["You've got {why}. Bet 1x.", "{whyC}. Call it.", "Bet 1x, {name}. You've got {why}."],
+  hint_bet1_outs: ["Only {outs} of my cards beat you. Bet 1x.", "{outs} outs for me. Under 21, so call.", "Bet 1x. Just {outs} cards beat you."],
+  hint_fold: ["{outs} of my cards beat you. Fold.", "{outs} outs for me. Too many. Let it go.", "Fold it, {name}. {outs} cards beat you."],
+};
+/** How the dealer says why: "a hidden pair", "four to a flush with a hidden K"... */
+function uthWhy(a) {
+  const art = n => (/^(Pair|Straight|Flush|Full House|Straight Flush|Royal Flush)$/.test(n) ? "a " : "") + n.toLowerCase();
+  const why = a.why === "made" ? art(a.made) : a.why === "pocketPair" || a.why === "hiddenPair" ? "a hidden pair" : a.why === "flushDraw" ? `four to a flush with a hidden ${a.card}`
+    : a.why === "hidden" ? (a.made === "Pair" ? "a hidden pair" : art(a.made)) : a.why === "deuces" ? "pocket 2s" : "nothing";
+  return { why, whyC: why[0].toUpperCase() + why.slice(1), outs: a.outs };
+}
+const uthHintKind = a => a.move === "check" ? (a.why === "deuces" ? "hint_check_deuces" : a.why === "raise" ? "hint_check_broke" : a.why === "weak" ? "hint_check_pre" : "hint_check_flop")
+  : a.move === "bet1" ? (a.why === "outs" ? "hint_bet1_outs" : "hint_bet1_hidden") : "hint_" + a.move;
+const uthOffKind = o => o.kind === "flopBet" && o.why === "deuces" ? "flopBetDeuces" : o.kind === "riverFold" && o.why === "hidden" ? "riverFoldHidden" : o.kind;
+const UTH_MOVES = { check: "Check", bet3: "Bet 3×", bet4: "Bet 4×", bet2: "Bet 2×", bet1: "Bet 1×", fold: "Fold" };
+const uthHand = s => { const [x, y] = [...s.hole].sort((a, b) => UTH.ord(b) - UTH.ord(a)); return `${x.r}${y.r}${x.r === y.r ? "" : x.s === y.s ? " suited" : ""}`; };
+/** What the cards themselves won or lost (Ante, Blind and Play; side bets left out): the play is judged on this. */
+const uthMainNet = s => s.res ? s.res.ante + s.res.blind + s.res.play - 2 * s.ante - s.play : 0;
+function uthRecord(t) {
+  if (!t || t.phase !== "done" || t.recorded === t.round) return;
+  for (const s of t.seats) {
+    if (!s.inHand || s.net == null) continue;
+    const rec = bjRec(s.rid), r = bjTally(s.rid, "uth"); rec.stack = s.stack + bjReserve(s); rec.updated = Date.now();
+    r.hands++; r.net += s.net; r.best = Math.max(r.best, s.net);
+    if (s.net > 0) r.wins++; else if (s.net < 0) r.losses++; else r.pushes++;
+    if (s.folded) r.folds++; else if (s.res.cat === 9) r.royals++;
+  }
+  sfxResult(t.seats.filter(s => s.inHand && s.net != null).map(s => s.net), 10000);
+  t.recorded = t.round;
+}
+function uthDealTalk(t) {
+  const aces = t.seats.find(s => s.inHand && s.pocket && s.hole.every(c => c.r === "A"));
+  if (aces) { bjSay("pocket", { name: bjName(aces.rid) }); bj.saidRound = t.round; return true; }
+  return false;
+}
+function uthEndTalk(t) {
+  const live = t.seats.filter(s => s.inHand && s.res), say = (k, s, v = {}) => { bjSay(k, { name: bjName(s.rid), ...v }); bj.saidRound = t.round; };
+  const aa = live.find(s => s.res.pocketHand === "aa-aa"); if (aa) return say("aaAA", aa, { amount: Dr.fmt(aa.res.pocket - aa.pocket) });
+  const royal = live.find(s => !s.folded && s.res.cat === 9 && s.res.outcome === "win"); if (royal) return say("royal", royal);
+  const mon = live.filter(s => s.res.outcome === "win" && s.res.cat >= 6).sort((a, b) => b.res.blind - a.res.blind)[0];
+  if (mon) return say("monster", mon, { hand: mon.res.name, amount: Dr.fmt(mon.res.blind - mon.ante) });
+  const tr = live.filter(s => s.trips && s.res.cat >= 6 && s.res.trips).sort((a, b) => b.res.trips - a.res.trips)[0];
+  if (tr) return say("trips", tr, { hand: tr.res.name, amount: Dr.fmt(tr.res.trips - tr.trips) });
+  const lucky = bj.off && bj.off.round === t.round ? live.filter(s => bj.off.rids.includes(s.rid) && uthMainNet(s) > 0).sort((a, b) => uthMainNet(b) - uthMainNet(a))[0] : null;
+  if (lucky) return say("offWin", lucky, { amount: Dr.fmt(uthMainNet(lucky)) });
+  const track = bj.track && bj.track.round === t.round ? bj.track.by : {};
+  const losers = live.filter(s => uthMainNet(s) < 0 && track[s.rid]);
+  const backfired = losers.find(s => track[s.rid].followed); if (backfired) return say("hintBackfire", backfired);
+  const unlucky = losers.find(s => track[s.rid].book > 0 && !track[s.rid].off && !s.res.wouldWin);
+  if (unlucky && bj.unluckyRound !== t.round - 1) { bj.unluckyRound = t.round; return say("unlucky", unlucky); }
+  const folded = live.find(s => s.res.wouldWin); if (folded) return say("foldWin", folded);
+  if (bj.saidRound === t.round) return;
+  const best = live.filter(s => s.net >= 10000 || s.net >= 10 * s.ante).sort((a, b) => b.net - a.net)[0]; if (best) return say("big", best, { amount: Dr.fmt(best.net) });
+  if (!t.dealerHand.qual && live.some(s => s.res.outcome === "win")) { bjSay("noQual"); bj.saidRound = t.round; }
+}
+function uthAfter() {
+  const t = bjT(); bj.hint = null;
+  if (t.shown !== bj.shownSeen) { if (t.shown > (bj.shownSeen || 0)) setTimeout(() => sfx("card"), 120); bj.shownSeen = t.shown; }
+  if (t.phase === "done") { uthRecord(t); uthEndTalk(t); }
+  bjSave(); drawBJ();
+}
+/** Handles the hold'em table's own buttons; false for the ones both tables share. */
+function uthAction(a) {
+  const t = bjT(), i = bjCur(), seat = t && t.seats[i];
+  const [k, v] = a.split(":");
+  const fresh = () => { if (t.phase === "done") UTH.newRound(t); };
+  switch (k) {
+    case "seat": if (t && (t.phase === "bet" || t.phase === "done")) { bj.sel = Number(v); drawBJ(); } return true;
+    case "chip": { fresh(); if (bjDo(() => UTH.setBet(t, i, "ante", seat.ante + Number(v)))) { bjSave(); drawBJ(); } return true; }
+    case "clear": if (t.phase === "bet") { seat.ante = seat.trips = seat.pocket = 0; bjSave(); drawBJ(); } return true;
+    case "trips": case "pocket": {
+      fresh(); const next = Math.max(0, Math.min(UTH.SIDE_MAX, (seat[k] || 0) + (v === "up" ? 100 : -100)));
+      if (bjDo(() => UTH.setBet(t, i, k, next))) { bjSave(); drawBJ(); } return true;
+    }
+    case "deal": {
+      bj.say = null; clearTimeout(bj.sayTimer); fresh();
+      if (!bjDo(() => UTH.deal(t, bjRng))) return true;
+      uthDealTalk(t); uthAfter(); return true;
+    }
+    case "next": bj.say = null; clearTimeout(bj.sayTimer); UTH.newRound(t); bjSave(); drawBJ(); return true;
+    case "check": case "bet4": case "bet3": case "bet2": case "bet1": case "fold": {
+      if (!UTH.PLAYING.includes(t.phase)) return true;
+      const rid = t.seats[t.turn].rid, off = UTH.offBook(t, k), tr = bjTrack(t, rid); if (off) tr.off++; else tr.book++;
+      if (bj.hintFor && bj.hintFor.round === t.round && bj.hintFor.rid === rid) { if (bj.hintFor.move === k) tr.followed = true; bj.hintFor = null; }
+      if (!bjDo(() => UTH.act(t, k))) return true;
+      { const tl = bjTally(rid, "uth"); tl.moves++; if (!off) tl.book++; }
+      if (off) { bjSay(uthOffKind(off), { name: bjName(rid), hand: off.hand, ...uthWhy(off) }); if (!bj.off || bj.off.round !== t.round) bj.off = { round: t.round, rids: [] }; bj.off.rids.push(rid); }
+      uthAfter(); return true;
+    }
+    case "hint": {
+      const adv = UTH.advice(t); if (!adv) return true; const s = t.seats[t.turn];
+      bjTally(s.rid, "uth").hints++;
+      bj.hintFor = { round: t.round, rid: s.rid, move: adv.move };
+      bjSay(uthHintKind(adv), { name: bjName(s.rid), hand: uthHand(s), ...uthWhy(adv) }); drawBJ(); return true;
+    }
+    case "leave": {
+      let left; if (!bjDo(() => { left = UTH.leave(t, i); })) return true;
+      const r = bjRec(seat.rid); r.stack = left + bjReserve(seat); r.updated = Date.now();
+      if (!t.seats.length) { bjD.uth = null; bj.screen = "pick"; } else bj.sel = Math.min(i, t.seats.length - 1);
+      bjSave(); drawBJ(); toast(`${bjName(seat.rid)} walks away with ${Dr.fmt(left)}`); return true;
+    }
+  }
+  return false;
+}
+/** The felt's print sits just under the board (B: the board's bottom, H: the felt's height, both in px). */
+function uthFeltPrint(B, H) {
+  const u = px => (px / H * 300).toFixed(1), y = B + 6, fine = H >= 420;
+  return `<svg class="bj-print" viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true">
+    <defs><path id="utharc2" d="M80 ${u(y + 2)} Q200 ${u(y + 30)} 320 ${u(y + 2)}"/><path id="utharc1" d="M40 ${u(y + 20)} Q200 ${u(y + 60)} 360 ${u(y + 20)}"/></defs>
+    <text font-size="${u(15)}" fill="#f2c94c" opacity=".85"><textPath href="#utharc2" startOffset="50%" text-anchor="middle">ULTIMATE TEXAS HOLD'EM</textPath></text>
+    ${fine ? `<text font-size="${u(8.6)}" fill="#f3efe4" opacity=".6"><textPath href="#utharc1" startOffset="50%" text-anchor="middle">DEALER QUALIFIES WITH A PAIR OR BETTER · TRIPS PAYS WIN OR LOSE</textPath></text>` : ""}</svg>`;
+}
+function uthTableHTML() {
+  const t = bjT(), n = t.seats.length, cur = bjCur(), playing = UTH.PLAYING.includes(t.phase);
+  // the felt fills the screen above the rail, but never so short that seats pile up (short phones scroll a little instead)
+  const H0 = Math.max(n >= 5 ? 430 : n >= 3 ? 360 : 310, Math.min(innerWidth * 1.08, innerHeight - 360, 560)) - 24;
+  // one player: the biggest cards; everything shrinks as players join (and on a shorter table)
+  const size = n === 1 ? (H0 >= 400 ? "xl" : "lg") : ["lg", "md", "sm"][Math.min(2, (n <= 2 ? 0 : n <= 4 ? 1 : 2) + (H0 < 450 && n <= 4 ? 1 : 0))];
+  const bw = n === 1 ? (H0 >= 400 ? 46 : 40) : n === 2 ? 40 : n <= 4 ? 36 : 34, dw = bw - 4;   // board and dealer card widths
+  const w = { xl: 58, lg: 44, md: 34, sm: 25 }[size], seatH = 112 + 1.4 * w + (size === "xl" ? 10 : 0), B0 = Math.max(42, 1.4 * dw) + 4 + 1.4 * bw + 12;
+  // tall enough for the board, the felt's print and a seat under it (short phones scroll a little)
+  const H = Math.max(H0, Math.ceil((B0 + (H0 >= 420 ? 58 : 32) + seatH + 8) / .97)), B = H * .03 + B0, below = B + (H >= 420 ? 58 : 32);
+  const flip = !t.hole && !bj.holeShown && t.dealer.length;
+  const dealer = t.dealer.map(c => bjCard(c, t.hole, flip ? "flip" : "")).join("");
+  const board = t.board.map((c, k) => k < t.shown ? bjCard(c, false) : bjCard(c, true)).join("");
+  const dh = t.phase === "done" && t.dealerHand ? `<span class="bj-tot ${t.dealerHand.qual ? "" : "nq"}">${t.dealerHand.name}${t.dealerHand.qual ? "" : " · No Qualify"}</span>` : "";
+  const label = { win: "Win", lose: "Lose", push: "Push", fold: "Fold" };
+  // every seat hangs from its bottom edge; seats in line with the board start below it and the felt's print,
+  // and a seat next to an outer one that it would overlap sits a full seat lower
+  const spots = t.seats.map((_, i) => { const spread = n >= 5 ? 160 : 140, th = ((180 - spread) / 2 + spread * (i + 0.5) / n) * Math.PI / 180, x = 50 + (n >= 5 ? 44 : 41) * Math.cos(th);
+    const top = Math.abs(x - 50) < 34 ? below : H * .1; return { x, bottom: Math.max(top + seatH, H * (.36 + .56 * Math.sin(th))) }; });
+  [...spots].sort((a, b) => Math.abs(b.x - 50) - Math.abs(a.x - 50)).forEach(a => spots.forEach(o => { if (o !== a && Math.abs(o.x - 50) > Math.abs(a.x - 50) && Math.abs(o.x - a.x) < 17) a.bottom = Math.max(a.bottom, o.bottom + seatH + 4); }));
+  const seats = t.seats.map((s, i) => {
+    const x = spots[i].x, bottom = Math.min(H - 6, spots[i].bottom);
+    const now = playing && t.turn === i, shownBoard = t.board.slice(0, t.shown);
+    const made = s.res ? s.res.name : s.hole.length && t.shown >= 3 && !s.folded ? UTH.best([...s.hole, ...shownBoard]).name : "";
+    const cards = s.hole.length ? `<div class="bj-hand ${now ? "now" : ""} ${s.folded ? "folded" : ""}">${made ? `<span class="bj-tot">${made}</span>` : ""}<div class="bj-row">${s.hole.map(c => bjCard(c, false)).join("")}</div>${s.res ? `<span class="bj-res ${s.res.outcome === "fold" ? "lose" : s.res.outcome}">${label[s.res.outcome]}</span>` : ""}</div>` : "";
+    // the betting circles: Ante and Blind side by side, Play below; Trips and Pocket Bonus markers either side
+    const b = s.inHand ? s : t.phase === "bet" || t.phase === "done" ? UTH.betsNow(t, s) : { ante: 0, trips: 0, pocket: 0 }, r = s.res, a = s.ante;
+    const m = (amt, cls, key, txt, won) => amt ? `<i class="bj-mark ${cls} ${r ? (won ? "won" : "lost") : ""}" role="button" tabindex="0" data-bj="rules:${key}" aria-label="${key === "trips" ? "Trips" : "Pocket Bonus"} rules">${txt}</i>` : "";
+    const res = (paid, bet) => !r || !bet ? "" : paid > bet ? "won" : paid === bet ? "push" : "lost";
+    const circle = (cls, label, amt, state) => `<span class="uth-c ${cls} ${state}">${amt ? bjStackSVG(amt, true, 6) : `<i>${label}</i>`}</span>`;
+    const play = s.inHand ? s.play : 0;
+    // Trips over the Ante, Pocket Bonus over the Blind (an empty dashed marker when not bet), then Ante and Blind, then Play under the Ante
+    const side = (amt, cls, key, txt, won) => amt ? m(amt, cls, key, txt, won) : `<i class="bj-mark ${cls} open" role="button" tabindex="0" data-bj="rules:${key}" aria-label="${key === "trips" ? "Trips" : "Pocket Bonus"} rules (no bet)">${txt}</i>`;
+    const sides = `<span class="uth-row uth-sides"><span>${side(b.trips, "tt", "trips", "T", r && r.trips)}</span><span>${side(b.pocket, "jp", "pocket", "PB", r && r.pocket)}</span></span>`;
+    const circles = `<span class="uth-spots">${sides}<span class="uth-row">${circle("ante", "Ante", b.ante, r ? res(r.ante, a) : "")}${circle("blind", "Blind", b.ante, r ? res(r.blind, a) : "")}</span>${circle("play", "Play", play, r ? res(r.play, play) : "")}</span>`;
+    const p = bjPlayer(s.rid);
+    return `<button type="button" class="bj-seat uth-seat ${size} from-bottom ${i === cur ? "sel" : ""}" data-bj="seat:${i}" style="left:${x.toFixed(1)}%;top:${bottom.toFixed(0)}px" aria-label="${esc(p.name)}, ${Dr.fmt(s.stack)}">
+      <div class="bj-hands">${cards}</div>${circles}
+      <span class="bj-name">${avatarHTML(p, "", true)}${esc(p.name)}</span></button>`;
+  }).join("");
+  bj.holeShown = !t.hole;
+  const say = bj.say ? `<div class="bj-say ${bj.say.id !== bj.sayDrawn ? "pop" : ""}" role="status">${esc(bj.say.text)}</div>` : "";
+  if (bj.say) bj.sayDrawn = bj.say.id;
+  return `<div class="bj-scene uth-scene">${say}<div class="bj-dealer">${BJ_DEALER_SVG}</div>
+    <div class="bj-persp"><div class="bj-felt uth-felt" style="height:${H + 24}px">${uthFeltPrint(B, H)}
+      <div class="bj-pot uth-pays" role="button" tabindex="0" data-bj="rules:blind" aria-label="Blind payouts"><b>Blind Pays</b></div>
+      <div class="bj-dcards uth-mid" style="--dw:${dw}px;--bw:${bw}px">${t.dealer.length ? `<div class="uth-drow"><div class="bj-row uth-dealer">${dealer}</div>${dh}</div><div class="uth-board">${board}</div>` : ""}</div>
+      ${seats}</div></div></div>`;
+}
+function uthRailHTML() {
+  const t = bjT(), i = bjCur(), s = t.seats[i], p = bjPlayer(s.rid), nb = UTH.betsNow(t, s), playing = UTH.PLAYING.includes(t.phase);
+  const amt = a => (a > 0 ? "+" : a < 0 ? "−" : "") + Dr.fmt(Math.abs(a)), fmt0 = c => Dr.fmt(c).replace(".00", "");
+  const items = t.phase === "done" ? UTH.breakdown(t, s) : [];
+  const cls = items.length ? (s.net > 0 ? "up" : s.net < 0 ? "down" : "") : "";
+  const line = items.length ? `${s.net > 0 ? "Won" : s.net < 0 ? "Lost" : "Even"} ${s.net ? Dr.fmt(Math.abs(s.net)) : ""}`.trim()
+    : s.inHand ? `In for ${Dr.fmt(2 * s.ante + s.play + s.trips + s.pocket)}` : nb.ante ? `Ante ${fmt0(nb.ante)} · Blind ${fmt0(nb.ante)}` : t.phase === "bet" || t.phase === "done" ? "Place an Ante" : "Sitting out";
+  const brk = items.length ? `<div class="bj-break num">${items.map(x => `<span class="${x.amount > 0 ? "up" : x.amount < 0 ? "down" : ""}">${esc(x.label)} ${amt(x.amount)}</span>`).join("")}</div>` : "";
+  const hand = s.inHand && s.hole.length ? (s.folded ? "Folded" : t.shown >= 3 ? UTH.describe(UTH.best([...s.hole, ...t.board.slice(0, t.shown)]).score) : UTH.describeHole(s.hole)) : "";
+  const who = (hand ? `<div class="rail-total"><b>${hand}</b></div>` : "") + `<div class="bj-who">${avatarHTML(p)}<div><b>${esc(p.name)}</b><small class="num ${cls}">${line}</small></div><span class="bj-net num">${Dr.fmt(s.stack)}</span></div>${brk}`;
+  const stack = brk ? "" : `<div class="bj-stack">${bjStackSVG(s.stack)}</div>`;
+  const sub = opts => `<div class="bj-sub">${opts.join("")}</div>`;
+  const leave = `<button class="ghost" data-bj="leave">Walk Away</button>`, add = t.seats.length < UTH.SEATS ? `<button class="ghost" data-bj="pick">+ Add Player</button>` : "";
+  let body;
+  if (t.phase === "bet" || t.phase === "done") {
+    const broke = s.stack < UTH.need(UTH.ANTE_MIN, 0, 0), room = s.stack - UTH.need(nb.ante, nb.trips, nb.pocket);
+    const chips = BJ_DENOMS.filter(d => d.c >= UTH.ANTE_MIN && d.c <= UTH.ANTE_MAX).reverse().map(d => `<button type="button" class="bj-chip" data-bj="chip:${d.c}" ${nb.ante + d.c > UTH.ANTE_MAX || UTH.need(nb.ante + d.c, nb.trips, nb.pocket) > s.stack ? "disabled" : ""} aria-label="Ante ₯${d.label}">${chipHTML({ color: d.color, text: d.text, edge: d.edge === "#f4ead2" ? null : d.edge, label: d.label })}</button>`).join("");
+    const step = (k, name) => `<div class="bj-side"><span role="button" tabindex="0" data-bj="rules:${k}" aria-label="${name} rules">${name}</span><button type="button" class="step" data-bj="${k}:down" aria-label="Less on ${name}" ${nb[k] ? "" : "disabled"}>−</button>
+      <b class="num">${fmt0(nb[k])}</b><button type="button" class="step" data-bj="${k}:up" aria-label="More on ${name}" ${nb.ante && nb[k] < UTH.SIDE_MAX && room >= 100 ? "" : "disabled"}>+</button></div>`;
+    const anyBet = t.phase === "bet" ? t.seats.some(x => x.ante > 0) : t.seats.some(x => UTH.nextBets(x).ante > 0);
+    body = (broke ? `<div class="bj-acts"><button class="btn primary" data-bj="rebuy">${bjReserve(s) >= UTH.need(UTH.ANTE_MIN, 0, 0) ? `Bring More (${Dr.fmt(bjReserve(s))} Left)` : `Take Another ${Dr.fmt(UTH.BUYIN)}`}</button></div>` : `<div class="bj-chips">${chips}</div><div class="bj-sides">${step("trips", "Trips")}${step("pocket", "Pocket")}</div>`)
+      + `<div class="bj-acts">${t.phase === "done" ? `<button class="btn" data-bj="next">Next Hand</button>` : `<button class="btn" data-bj="clear" ${s.ante ? "" : "disabled"}>Clear Bet</button>`}<button class="btn primary" data-bj="deal" ${anyBet ? "" : "disabled"}>Deal</button></div>`
+      + sub([leave, add]);
+  } else if (playing) {
+    const o = UTH.options(t), moves = { pre: ["check", "bet3", "bet4"], flop: ["check", "bet2"], river: ["fold", "bet1"] }[t.phase];
+    const b = m => `<button class="btn ${m.startsWith("bet") && m !== "bet3" ? "primary" : ""}" data-bj="${m}" ${o.includes(m) ? "" : "disabled"}>${UTH_MOVES[m]}${m.startsWith("bet") ? ` <small class="num">${fmt0(Number(m.slice(3)) * s.ante)}</small>` : ""}</button>`;
+    body = `<div class="bj-acts">${moves.map(b).join("")}</div>${sub([`<button class="ghost" data-bj="hint">Hint</button>`])}`;
+  } else body = `<p class="bj-msg">Showdown</p>`;
+  return `<div class="bj-rail ${t.phase === "bet" || t.phase === "done" ? "betting" : ""}">${who}${stack}${body}</div>`;
+}
+function uthRulesHTML(k) {
+  const row = (a, b) => `<tr><td>${a}</td><td class="num">${b}</td></tr>`, H = UTH.HANDS;
+  let body;
+  if (k === "trips") body = `<h2>Trips</h2><p>Your best five cards. Pays win or lose, even if you fold. ₯1 to ₯25.</p>
+    <table class="bj-pay">${[9, 8, 7, 6, 5, 4, 3].map(c => row(H[c], `${UTH.TRIPS_PAYS[c]} to 1`)).join("")}</table>`;
+  else if (k === "pocket") body = `<h2>Pocket Bonus</h2><p>Your two hole cards. Pays even if you fold. ₯1 to ₯25.</p>
+    <table class="bj-pay">${Object.keys(UTH.POCKET_PAYS).map(h => row(UTH.POCKET_NAMES[h], `${UTH.POCKET_PAYS[h]} to 1`)).join("")}</table>`;
+  else if (k === "blind") body = `<h2>Blind Pays</h2>
+    <table class="bj-pay">${[9, 8, 7, 6, 5, 4].map(c => row(H[c], `${UTH.BLIND_PAYS[c][0]} to ${UTH.BLIND_PAYS[c][1]}`)).join("")}</table>
+    <p class="bj-fine">Paid when you win. A winning hand below a straight pushes the Blind. Ante and Play pay 1 to 1; the Ante pushes when the dealer doesn't qualify (a pair or better).</p>`;
+  else body = `<h2>Ultimate Texas Hold'em</h2><p>Ante and Blind, equal bets. Before the flop, bet 4× or 3× the Ante, or check. On the flop, bet 2× or check. On the river, bet 1× or fold.</p>
+    <p>Best five of your two cards and the board against the dealer's. Win: Play and Ante pay 1 to 1. The dealer needs a pair; if not, the Ante pushes.</p>
+    <table class="bj-pay">${[9, 8, 7, 6, 5, 4].map(c => row(`Blind: ${H[c]}`, `${UTH.BLIND_PAYS[c][0]} to ${UTH.BLIND_PAYS[c][1]}`)).join("")}</table><p class="bj-fine">A winning hand below a straight pushes the Blind.</p>`;
+  const name = { trips: "Trips", pocket: "Pocket Bonus", blind: "Blind payouts" }[k] || "Ultimate Texas Hold'em";
+  return `<div class="bj-modal" data-bj="rules-close"><div class="bj-sheet" role="dialog" aria-label="${name} rules" data-bj="noop">${body}<div class="actions"><button class="btn primary" data-bj="rules-close">Close</button></div></div></div>`;
+}
 // ===== Drag and drop: table seats and the intro chip row =====
 // Phones: press and hold, then drag. Mouse: just drag. A quick tap still does what it always did.
 const DRAG_ZONES = [
@@ -3223,19 +4912,20 @@ const DRAG_ZONES = [
     item: ".home-chips .chip-btn[data-i]", root: ".home-chips",
     can: () => view === "home",
     targets: ".home-chips .chip-btn[data-i]",
+    hold: () => openDialog({ k: "chip-sets" }),   // press and hold without dragging: the chip sets
     drop(el, t) {
       const i = Number(el.dataset.i), j = Number(t.dataset.i), set = (ChipSet.normalize(store.get(CKEY)) || DEFAULT_CHIPS).map(c => ({ ...c }));
       if (i === j || !set[i] || !set[j]) return;
       [set[i], set[j]] = [set[j], set[i]];
       const ok = ChipSet.normalize(set); if (!ok) return;
-      store.set(CKEY, ok); ChipSet.apply(ok); render();
+      putChips(ok); render();
       toast(`Swapped the ${chipLabel(ok[j].cents)} and ${chipLabel(ok[i].cents)} chips`);
     },
   },
 ];
 const dragger = (() => {
   let g = null, swallowIn = null;
-  const HOLD = 320, SLOP = 10;
+  const HOLD = 320, SLOP = 10, LONG = 450;
   const zoneFor = el => { if (!el || dialog) return null; for (const z of DRAG_ZONES) { const it = el.closest && el.closest(z.item); if (it && z.can(it)) return [z, it]; } return null; };
   const targetAt = (x, y) => { const t = document.elementFromPoint(x, y); const el = t && t.closest && t.closest(g.z.targets); return el && el !== g.el ? el : null; };
   function begin() {
@@ -3249,22 +4939,25 @@ const dragger = (() => {
   function move(x, y) {
     g.x = x; g.y = y;
     if (!g.active) { if (Math.hypot(x - g.sx, y - g.sy) > (g.touch ? SLOP : 6)) { if (g.touch) return end(false); begin(); } else return; }
+    if (Math.hypot(x - g.sx, y - g.sy) > SLOP) g.moved = true;
     if (!g) return;
     g.ghost.style.left = x + "px"; g.ghost.style.top = y + "px";
     const t = targetAt(x, y); if (t !== g.over) { if (g.over) g.over.classList.remove("drop-target"); g.over = t; if (t) t.classList.add("drop-target"); }
   }
   function end(drop) {
     if (!g) return; clearTimeout(g.timer);
-    const { active, over, el, z } = g, target = drop && over && over.isConnected ? over : null;
+    const { active, over, el, z, moved, t0 } = g, target = drop && over && over.isConnected ? over : null;
+    const held = drop && z.hold && !target && !moved && Date.now() - t0 >= LONG;   // a long press that never went anywhere
     if (g.ghost) g.ghost.remove(); el.classList.remove("dragging"); if (over) over.classList.remove("drop-target");
     g = null;
-    if (!active) return;
+    if (!active && !held) return;
     swallowIn = z.root; setTimeout(() => (swallowIn = null), 400);
+    if (held && el.isConnected && !dialog) return z.hold(el);
     if (target && el.isConnected && !dialog) z.drop(el, target);
   }
   // a new press is a new tap, never the tail of the last drag
   const start = (e, x, y, touch) => { swallowIn = null; const hit = zoneFor(e.target); if (!hit) return false; const [z, el] = hit;
-    g = { z, el, sx: x, sy: y, x, y, touch, active: false, over: null }; if (touch) g.timer = setTimeout(() => g && begin(), HOLD); return true; };
+    g = { z, el, sx: x, sy: y, x, y, touch, active: false, over: null, moved: false, t0: Date.now() }; if (touch) g.timer = setTimeout(() => g && begin(), HOLD); return true; };
   // Touch: use touch events so scrolling still works until the hold kicks in
   document.addEventListener("touchstart", e => { if (e.touches.length > 1) return g && end(false); const t = e.touches[0]; start(e, t.clientX, t.clientY, true); }, { passive: true });
   document.addEventListener("touchmove", e => { if (!g || !g.touch) return; if (g.active) e.preventDefault(); const t = e.touches[0]; move(t.clientX, t.clientY); }, { passive: false });
@@ -3331,6 +5024,9 @@ setInterval(() => { const el = document.getElementById("session-clock"); if (el 
  * pbBack(): handles the phone's Back button; returns false when the app should close.
  */
 window.pbBack = () => {
+  if (bj && bj.ritual) { bjRitualEnd(); return true; }
+  if (bj && bj.rules) { bj.rules = null; drawBJ(); return true; }
+  if (bj) { const t = bjT(); if (bj.screen !== "table" && t && t.seats.length) { bj.screen = "table"; drawBJ(); } else bjClose(); return true; }
   if (bombStage) { if (bombStage.k === "rules") { bombStage = bombStage.back; drawBomb(); } else if (!(bombStage.k === "wheel" && !bombStage.done)) { bombStage = null; drawBomb(); render(); } return true; }
   if (dialog) { if (!(dialog.k === "curtis-wheel" && !dialog.done)) closeDialog(); return true; }   // the wheel finishes its spin first
   if (view === "home") { if (demo) { exitDemo(); return true; } return false; }
