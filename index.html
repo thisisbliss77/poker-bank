@@ -554,6 +554,29 @@ button.pcard { cursor: pointer; } button.pcard.on { outline: 3px solid var(--bra
   display: inline-flex; align-items: center; gap: 6px; background: none; border: 1px solid var(--seat-line); border-radius: 999px; padding: 4px 11px 4px 6px; font-size: 12px; color: var(--ink-faint); }
 .nuke-link:hover { color: var(--claret); border-color: #6b2b28; }
 .nuke-link svg { display: block; flex: none; }
+.av { width: 40px; height: 40px; border-radius: 50%; flex: none; object-fit: cover; background: #2c3f36; color: var(--ink); display: inline-grid; place-items: center;
+  font-family: var(--f-display); font-weight: 600; font-size: 16px; border: 2px solid #4f6b5e; overflow: hidden; }
+.av.lg { width: 96px; height: 96px; font-size: 36px; border-width: 3px; border-color: var(--brass); }
+.av.sm { width: 22px; height: 22px; font-size: 10px; border-width: 1px; }
+.lb-who { display: flex; align-items: center; gap: 10px; } @media (max-width: 559px) { .lb .lb-view { margin-left: 50px; } } .lb-txt { display: grid; min-width: 0; }
+.pf-photo { justify-self: center; margin-bottom: 4px; }
+.roster-pick .choice { display: inline-flex; align-items: center; gap: 6px; }
+.photo-pick { display: flex; align-items: center; gap: 14px; }
+.photo-pick .av-btn { padding: 0; border: 0; background: none; border-radius: 50%; }
+.photo-pick .av-btn .av { width: 72px; height: 72px; border: 2px dashed #4f6b5e; }
+.photo-pick .av-btn img.av { border: 2px solid var(--brass); }
+.photo-pick .av-btn:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+.photo-pick > div { display: grid; gap: 6px; justify-items: start; }
+.pt-seat .pt-av { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 2px solid #1b1b1b; background: #2c3f36; }
+.pt-seat.has-av { padding-top: 13px; }
+@media (max-width: 480px) {   /* small phones: a small picture beside the name, so seats don't grow into each other */
+  .pt-seat.has-av { padding-top: 3px; } .pt-seat.has-av b { display: block; }
+  .pt-seat .pt-av { position: static; transform: none; display: inline-block; width: 15px; height: 15px; border-width: 1px; vertical-align: -3px; margin-right: 3px; } }
+.ptable .pt-seat, .ptable .pt-open { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.pt-seat.dragging { opacity: .3; }
+.drag-ghost { position: fixed; z-index: 80; pointer-events: none; transform: translate(-50%, -50%) scale(1.12); box-shadow: 0 10px 24px rgba(0,0,0,.5); margin: 0; }
+.pt-seat.drop-target, .pt-open.drop-target { border-color: var(--brass) !important; box-shadow: 0 0 0 4px rgba(242,201,76,.55) !important; }
+.pt-open.drop-target { border-style: solid; background: rgba(242,201,76,.18); }
 .import-choice { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px 12px; margin-top: 4px; }
 .import-choice .btn { min-width: 104px; } .import-choice span { font-size: 13px; color: var(--ink-soft); }
 .nuke-list { margin: 0; padding-left: 18px; color: var(--ink-soft); font-size: 14px; display: grid; gap: 2px; }
@@ -574,6 +597,7 @@ button.pcard { cursor: pointer; } button.pcard.on { outline: 3px solid var(--bra
 // ===== Money logic: a port of the tested Kotlin core. All amounts are integer cents. =====
 /** Seats at the table. */
 const TABLE_SEATS = 10;
+const DEALER_SEAT = TABLE_SEATS / 2;   // the seat drawn at the bottom of the table: the first dealer always starts here
 /** Position names clockwise after the big blind, by how many players sit between the big blind and the button. */
 const MID_POSITIONS = [[], ["UTG"], ["UTG", "CO"], ["UTG", "HJ", "CO"], ["UTG", "LJ", "HJ", "CO"], ["UTG", "UTG+1", "LJ", "HJ", "CO"],
   ["UTG", "UTG+1", "UTG+2", "LJ", "HJ", "CO"], ["UTG", "UTG+1", "UTG+2", "MP", "LJ", "HJ", "CO"]];
@@ -665,34 +689,44 @@ class Ledger {
    * the table; buying back in takes a new seat). Returns an array of pids or null for an open seat.
    * Older saves (seats as an ordered list) are spread around the table.
    */
-  table() {
-    const seats = new Array(TABLE_SEATS).fill(null), st = this.events.find(e => e.t === "start"); if (!st) return seats;
+  table() { return this._seatReplay().seats; }
+  /** Replays the night's seat changes: who sits where, and which seat has the dealer button. */
+  _seatReplay() {
+    const seats = new Array(TABLE_SEATS).fill(null), st = this.events.find(e => e.t === "start"); if (!st) return { seats, b: -1, st };
     const active = new Set(), free = () => seats.indexOf(null);
     const put = (pid, k) => { if (seats.includes(pid)) return; if (!(Number.isInteger(k) && k >= 0 && k < TABLE_SEATS && seats[k] == null)) k = free(); if (k >= 0) seats[k] = pid; };
+    const nextTaken = b => { for (let i = 0; i < TABLE_SEATS; i++) { const k = ((b < 0 ? 0 : b) + i) % TABLE_SEATS; if (seats[k] != null) return k; } return -1; };
+    let b = null, after = false;   // b: the button's seat (null until known for older saves that only recorded the dealer)
     for (const e of this.events) {
       if (e.t === "buy") active.add(e.pid);
       else if (e.t === "out") { active.delete(e.pid); const k = seats.indexOf(e.pid); if (k >= 0) seats[k] = null; }
       else if (e.t === "start") {
         if (Array.isArray(e.seats)) e.seats.forEach((pid, k) => { if (pid != null && active.has(pid)) seats[k] = pid; });
         else { const order = (e.order || []).filter(pid => active.has(pid)); order.forEach((pid, i) => put(pid, Math.floor((i * TABLE_SEATS) / Math.max(order.length, 1)))); }
+        if (Number.isInteger(e.button)) b = e.button; after = true;
       }
-      else if (e.t === "seat" && this.events.indexOf(st) < this.events.indexOf(e) && active.has(e.pid)) put(e.pid, e.seat);
+      else if (e.t === "seat" && after && active.has(e.pid)) put(e.pid, e.seat);
+      else if (e.t === "button") b = e.seat;
+      else if (e.t === "move" && after && active.has(e.pid)) {
+        // Moving someone to an open seat, or swapping two players. The dealer button stays with the dealer.
+        const from = seats.indexOf(e.pid), to = e.seat;
+        if (from < 0 || !Number.isInteger(to) || to < 0 || to >= TABLE_SEATS || to === from) continue;
+        if (b == null) b = seats.indexOf(st.dealer);
+        const dealerSeat = nextTaken(b), other = seats[to];
+        b = dealerSeat;   // pin the button to whoever has it now, so nobody dropped into an empty seat ahead of them takes it
+        seats[to] = e.pid; seats[from] = other;
+        if (dealerSeat === from) b = to; else if (other != null && dealerSeat === to) b = from;
+      }
     }
     for (const pid of active) if (!seats.includes(pid) && this.players().some(p => p.id === pid)) put(pid, null);   // anyone still in without a seat (older saves)
-    return seats;
+    if (b == null) b = seats.indexOf(st.dealer);
+    return { seats, b: nextTaken(b), st };
   }
   /** Players at the table in seat order, starting from seat 1 (kept for older callers). */
   seating() { return this.table().filter(pid => pid != null); }
   seatOf(pid) { return this.table().indexOf(pid); }
   /** Seat with the dealer button: the button's seat, or the next occupied seat clockwise if it's empty. -1 before the start. */
-  get buttonSeat() {
-    const st = this.events.find(e => e.t === "start"); if (!st) return -1;
-    const t = this.table(); let b = Number.isInteger(st.button) ? st.button : t.indexOf(st.dealer);
-    for (const e of this.events) if (e.t === "button") b = e.seat;
-    if (b < 0) b = 0;
-    for (let i = 0; i < TABLE_SEATS; i++) { const k = (b + i) % TABLE_SEATS; if (t[k] != null) return k; }
-    return -1;
-  }
+  get buttonSeat() { return this._seatReplay().b; }
   /** Position name for each occupied seat, clockwise from the button: { seat: "BTN" | "SB" | "BB" | "UTG" | ... }. */
   positions() {
     const t = this.table(), b = this.buttonSeat, out = {}; if (b < 0) return out;
@@ -712,19 +746,30 @@ class Ledger {
     if (t[seat] != null) throw new LedgerError(`Seat ${seat + 1} is taken.`);
     return seat;
   }
-  /** Start Session: seat everyone still in at random seats around the table, pick a random dealer, start the clock. */
+  /** Start Session: pick a random dealer and seat them at the bottom of the table, seat everyone else at random, start the clock. */
   startSession() {
     this._open();
     if (this.isStarted) throw new LedgerError("This session has already started.");
     const pids = this.players().filter(p => p.active).map(p => p.id);
     if (pids.length < 2) throw new LedgerError("Add at least 2 players to start the session.");
     if (pids.length > TABLE_SEATS) throw new LedgerError(`A table seats ${TABLE_SEATS}. Cash someone out before starting.`);
-    const ks = [...Array(TABLE_SEATS).keys()];
-    for (let i = ks.length - 1; i > 0; i--) { const j = Math.floor(this.rng() * (i + 1)); [ks[i], ks[j]] = [ks[j], ks[i]]; }
-    const seats = new Array(TABLE_SEATS).fill(null); pids.forEach((pid, i) => (seats[ks[i]] = pid));
     const dealer = pids[Math.floor(this.rng() * pids.length)];
-    this.events.push({ t: "start", id: this.nextId(), time: this.clock(), seats, dealer, button: seats.indexOf(dealer) });
+    const ks = [...Array(TABLE_SEATS).keys()].filter(k => k !== DEALER_SEAT);
+    for (let i = ks.length - 1; i > 0; i--) { const j = Math.floor(this.rng() * (i + 1)); [ks[i], ks[j]] = [ks[j], ks[i]]; }
+    const seats = new Array(TABLE_SEATS).fill(null); seats[DEALER_SEAT] = dealer;
+    pids.filter(pid => pid !== dealer).forEach((pid, i) => (seats[ks[i]] = pid));
+    this.events.push({ t: "start", id: this.nextId(), time: this.clock(), seats, dealer, button: DEALER_SEAT });
     return dealer;
+  }
+  /** Drag and drop at the table: move a player to an open seat, or swap seats with whoever sits there. Returns false if nothing changed. */
+  movePlayer(pid, seat) {
+    this._open(); if (!this.isStarted) throw new LedgerError("Start the session first.");
+    if (!Number.isInteger(seat) || seat < 0 || seat >= TABLE_SEATS) throw new LedgerError("That seat doesn't exist.");
+    const t = this.table(), from = t.indexOf(pid);
+    if (from < 0) throw new LedgerError("That player isn't at the table.");
+    if (from === seat) return false;
+    this.events.push({ t: "move", id: this.nextId(), time: this.clock(), pid, seat, ...(t[seat] != null ? { with: t[seat] } : {}) });
+    return true;
   }
   /** Pass the dealer button to the next player clockwise. */
   moveButton() {
@@ -974,6 +1019,7 @@ class Ledger {
       case "seat": { const b = this.events[this.events.length - 2], ad = this.events[this.events.length - 3];
         return ad && ad.t === "add" && ad.pid === last.pid ? `adding ${nm(last.pid)}` : b && b.t === "buy" && b.pid === last.pid ? `${nm(last.pid)}'s ${Money.fmt(b.cents)} buy-in` : `seating ${nm(last.pid)}`; }
       case "button": return "moving the dealer button";
+      case "move": return last.with != null ? `swapping ${nm(last.pid)} and ${nm(last.with)}` : `moving ${nm(last.pid)} to seat ${last.seat + 1}`;
     }
   }
   allNames() { const n = {}; [...this.voided, ...this.events].sort((a, b) => a.id - b.id).forEach(e => { if (e.t === "add" || e.t === "rename") n[e.pid] = e.name; }); return n; }
@@ -982,7 +1028,7 @@ class Ledger {
   static valid(events, voided) {
     if (!Array.isArray(events) || !Array.isArray(voided)) return false;
     const all = [...events, ...voided];
-    if (!all.every(e => e && Number.isInteger(e.id) && Number.isFinite(e.time) && ["add","rename","buy","out","settle","end","start","seat","curtis","pay","cwin","button"].includes(e.t))) return false;
+    if (!all.every(e => e && Number.isInteger(e.id) && Number.isFinite(e.time) && ["add","rename","buy","out","settle","end","start","seat","curtis","pay","cwin","button","move"].includes(e.t))) return false;
     if (new Set(all.map(e => e.id)).size !== all.length) return false;
     for (let i = 1; i < events.length; i++) if (events[i].id <= events[i - 1].id) return false;
     const known = new Set(), iou = {}, due = {}, seatedRids = new Set(), seated = new Set(); let started = false, spun = false, rounds = 0;
@@ -1011,6 +1057,7 @@ class Ledger {
         continue;
       }
       if (e.t === "button") { if (!started || !Number.isInteger(e.seat) || e.seat < 0 || e.seat >= TABLE_SEATS) return false; continue; }
+      if (e.t === "move") { if (!started || !known.has(e.pid) || !Number.isInteger(e.seat) || e.seat < 0 || e.seat >= TABLE_SEATS || (e.with != null && !known.has(e.with))) return false; continue; }
       if (e.t === "add") {
         if (known.has(e.pid) || typeof e.name !== "string") return false;
         if (e.rid != null) { if (!Number.isInteger(e.rid) || seatedRids.has(e.rid)) return false; seatedRids.add(e.rid); }
@@ -1295,6 +1342,9 @@ const Roster = {
     if (list.some(r => r.id !== exceptId && r.name.toLowerCase() === n.toLowerCase())) throw new LedgerError(`${n} is already a player.`);
     return n;
   },
+  /** A profile picture: a small JPEG/PNG/WebP picture stored in the player record. Returns it if valid, else null. */
+  PHOTO_MAX: 200000,
+  photo(r) { const v = r && r.photo; return typeof v === "string" && v.length <= Roster.PHOTO_MAX && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(v) ? v : null; },
   /** Optional profile fields: { key: [label, max length] } */
   FIELDS: { nick: ["Nickname", 30], motto: ["Motto", 80] },
   RANKS: ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"],
@@ -1341,11 +1391,13 @@ const Roster = {
     const f = typeof fields === "string" ? { name: fields } : fields;
     const name = Roster.validName(list, f.name), profile = Roster.validProfile(f);
     const id = Math.max(0, ...list.map(r => r.id), ...usedIds.filter(Number.isInteger)) + 1;
-    return [...list, { id, name, ...profile, added: Date.now() }];
+    return [...list, { id, name, ...profile, ...(Roster.photo(f) ? { photo: f.photo } : {}), added: Date.now() }];
   },
   update(list, id, f) {
     const name = Roster.validName(list, f.name, id), profile = Roster.validProfile(f);
-    return list.map(r => r.id === id ? { ...r, name, ...profile } : r);
+    // photo: a new picture replaces the old one, null removes it, leaving it out keeps it
+    return list.map(r => { if (r.id !== id) return r; const out = { ...r, name, ...profile };
+      if ("photo" in f) { if (Roster.photo(f)) out.photo = f.photo; else delete out.photo; } return out; });
   },
   /** All player ids referenced anywhere in saved data. */
   idsInUse(history, sessionEvents) {
@@ -1468,7 +1520,8 @@ const DataFile = {
     }
     if (d.chips != null && !ChipSet.normalize(d.chips)) bad("That export file is damaged (the chip set is invalid).");
     const history = d.history.map(h => ({ ...h, voided: h.voided || [] }));
-    return { roster: d.roster, history, session, chips: d.chips == null ? null : ChipSet.normalize(d.chips), exportedAt: Number.isFinite(d.exportedAt) ? d.exportedAt : null };
+    const roster = d.roster.map(r => (r.photo != null && !Roster.photo(r) ? (({ photo, ...rest }) => rest)(r) : r));
+    return { roster, history, session, chips: d.chips == null ? null : ChipSet.normalize(d.chips), exportedAt: Number.isFinite(d.exportedAt) ? d.exportedAt : null };
   },
   /**
    * Adds a file's past sessions and players to this phone's data, keeping everything already here.
@@ -1486,6 +1539,7 @@ const DataFile = {
     const field = r => { const out = {};
       for (const [k, [, max]] of Object.entries(Roster.FIELDS)) { const v = typeof r[k] === "string" ? r[k].trim().replace(/\s+/g, " ") : ""; if (v && v.length <= max && !/[\u0000-\u001f\u007f]/.test(v)) out[k] = v; }
       if (typeof r.hand === "string" && Roster.parseHand(r.hand)) out.hand = r.hand.trim();
+      if (Roster.photo(r)) out.photo = r.photo;
       return out; };
     const map = new Map();
     let addedPlayers = 0;
@@ -1882,6 +1936,35 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;"
 let toastTimer;
 function toast(msg) { const el = $("#toast"); el.innerHTML = `<div class="toast" role="status">${esc(msg)}</div>`; clearTimeout(toastTimer); toastTimer = setTimeout(() => (el.innerHTML = ""), 2600); }
 function act(fn) { try { fn(); save(); render(); return null; } catch (e) { if (e instanceof LedgerError) return e.message; throw e; } }
+function photoPickHTML(ph) {
+  return `<button type="button" class="av-btn" data-x="photo-pick" aria-label="${ph ? "Change photo" : "Add photo"}">${ph ? `<img class="av" src="${ph}" alt="">`
+    : `<span class="av" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>`}</button>
+    <div><button type="button" class="btn" data-x="photo-pick">${ph ? "Change Photo" : "Add Photo"}</button>${ph ? `<button type="button" class="ghost" data-x="photo-remove">Remove Photo</button>` : ""}</div>`;
+}
+/** A player's picture, or their initials when there's none (fallback false: nothing). */
+function avatarHTML(r, cls = "", fallback = true) {
+  const ph = Roster.photo(r);
+  if (ph) return `<img class="av ${cls}" src="${ph}" alt="" draggable="false">`;
+  if (!fallback) return "";
+  const ini = String((r && r.name) || "?").trim().split(/\s+/).slice(0, 2).map(w => [...w][0] || "").join("").toUpperCase();
+  return `<span class="av ${cls}" aria-hidden="true">${esc(ini || "?")}</span>`;
+}
+/** Turns a picked image into a small square JPEG (center-cropped) that fits easily in saved data. */
+async function makeAvatar(file, size = 192) {
+  if (!file || !/^image\//.test(file.type || "image/")) throw new LedgerError("That file isn't a picture.");
+  let img;
+  try { img = await createImageBitmap(file); }
+  catch { img = await new Promise((ok, no) => { const i = new Image(), u = URL.createObjectURL(file); i.onload = () => { URL.revokeObjectURL(u); ok(i); }; i.onerror = () => { URL.revokeObjectURL(u); no(); }; i.src = u; })
+      .catch(() => { throw new LedgerError("Couldn't open that picture. Try a JPEG or PNG."); }); }
+  const w = img.width, h = img.height, side = Math.min(w, h); if (!side) throw new LedgerError("Couldn't open that picture. Try a JPEG or PNG.");
+  const c = document.createElement("canvas"); c.width = c.height = size;
+  const g = c.getContext("2d"); g.fillStyle = "#2c3f36"; g.fillRect(0, 0, size, size);
+  g.drawImage(img, (w - side) / 2, (h - side) / 2, side, side, 0, 0, size, size);
+  if (img.close) img.close();
+  const url = c.toDataURL("image/jpeg", 0.82);
+  if (!Roster.photo({ photo: url })) throw new LedgerError("Couldn't open that picture. Try a JPEG or PNG.");
+  return url;
+}
 function chipHTML(c) { return `<span class="chip" style="--c:${c.color};${c.text ? `--t:${c.text}` : ""}" aria-hidden="true"><b>${c.label}</b></span>`; }
 
 // ===== Views =====
@@ -2032,7 +2115,7 @@ function playersView() {
     ${st.rows.length ? `
     <ol class="lb">${st.rows.map(r => `<li class="${r.total > 0 ? "up" : r.total < 0 ? "down" : ""}">
       <span class="rk num">${r.rank == null ? "–" : (r.tied ? "T" : "") + r.rank}</span>
-      <span class="lb-who"><b>${esc(r.name)}${(() => { const n = getRoster().find(x => x.id === r.rid)?.nick; return n ? ` <i class="lb-nick">“${esc(n)}”</i>` : ""; })()}</b><small class="num">${r.played ? `${r.played} session${r.played === 1 ? "" : "s"} · won ${r.wins} of ${r.played}${r.topWins ? ` · top winner ${r.topWins}×` : ""}${r.curtisWins ? ` · Curtis Game ${r.curtisWins}×` : ""}` : "No sessions yet"}</small></span>
+      <span class="lb-who">${avatarHTML(getRoster().find(x => x.id === r.rid) || r)}<span class="lb-txt"><b>${esc(r.name)}${(() => { const n = getRoster().find(x => x.id === r.rid)?.nick; return n ? ` <i class="lb-nick">“${esc(n)}”</i>` : ""; })()}</b><small class="num">${r.played ? `${r.played} session${r.played === 1 ? "" : "s"} · won ${r.wins} of ${r.played}${r.topWins ? ` · top winner ${r.topWins}×` : ""}${r.curtisWins ? ` · Curtis Game ${r.curtisWins}×` : ""}` : "No sessions yet"}</small></span></span>
       <span class="lb-amt num">${r.played ? Money.signed(r.total) : ""}</span>
       <button class="btn lb-view" data-a="viewplayer" data-r="${r.rid}">View Player</button>
     </li>`).join("")}</ol>${curtisBoardHTML(st)}`
@@ -2075,7 +2158,8 @@ function playerView() {
   return `<div class="wrap">
     <header class="top report-head"><button class="ghost" data-a="players">← Leaderboard</button><h2>${esc(r.name)}</h2><button class="ghost" data-a="roster-rename" data-r="${r.rid}">Edit Player</button></header>
     ${(() => { const pr = getRoster().find(x => x.id === r.rid) || {};
-      return pr.nick || pr.motto || pr.hand ? `<section class="profile">
+      return pr.nick || pr.motto || pr.hand || Roster.photo(pr) ? `<section class="profile">
+        ${Roster.photo(pr) ? `<div class="pf-photo">${avatarHTML(pr, "lg")}</div>` : ""}
         ${pr.nick ? `<p class="pf-nick">“${esc(pr.nick)}”</p>` : ""}
         ${pr.motto ? `<blockquote class="pf-motto">${esc(pr.motto)}</blockquote>` : ""}
         ${pr.hand ? `<p class="pf-hand"><span class="lbl">Favorite hand</span> ${handHTML(pr.hand)}</p>` : ""}
@@ -2207,6 +2291,7 @@ function spinWheel(d) {
 /** The table: TABLE_SEATS seats around the felt. Players show their position; open seats can be tapped to seat someone there. */
 function pokerTableHTML(l) {
   const byId = new Map(l.players().map(p => [p.id, p])), t = l.table(), pos = l.positions(), btn = l.buttonSeat, live = !l.isConcluded;
+  const pics = new Map(getRoster().map(r => [r.id, Roster.photo(r)]));
   return `<section class="ptable" aria-label="Poker table">
     <div class="pt-felt"></div>
     <div class="pt-center">
@@ -2220,7 +2305,7 @@ function pokerTableHTML(l) {
       const p = byId.get(pid); if (!p) return "";
       const tag = live ? "button" : "div", label = pos[k] || "";
       return `<${tag} ${live ? `type="button" data-a="buy" data-p="${p.id}" title="Re-buy for ${esc(p.name)}" aria-label="Seat ${k + 1}: ${esc(p.name)}${label ? `, ${label}` : ""}, in for ${Money.fmt(p.inNow)}. Re-buy"` : ""}
-        class="pt-seat" ${at}><b>${esc(p.name)}</b><span class="num">${Money.fmt(p.inNow)}</span>${label ? `<i class="pt-pos ${label.startsWith("BTN") ? "btn" : /B$/.test(label) ? "blind" : ""}">${label}</i>` : ""}${k === btn ? `<em class="pt-dealer" title="Dealer">D</em>` : ""}</${tag}>`; }).join("")}
+        class="pt-seat${pics.get(p.rid) ? " has-av" : ""}" data-seat="${k}" ${at}><b>${pics.get(p.rid) ? `<img class="pt-av" src="${pics.get(p.rid)}" alt="" draggable="false">` : ""}${esc(p.name)}</b><span class="num">${Money.fmt(p.inNow)}</span>${label ? `<i class="pt-pos ${label.startsWith("BTN") ? "btn" : /B$/.test(label) ? "blind" : ""}">${label}</i>` : ""}${k === btn ? `<em class="pt-dealer" title="Dealer">D</em>` : ""}</${tag}>`; }).join("")}
   </section>`;
 }
 function seatHTML(p, concluded) {
@@ -2361,6 +2446,8 @@ function drawDialog() {
   if (d.k === "roster-add" || d.k === "roster-rename") { const cur = d.k === "roster-rename" ? getRoster().find(r => r.id === d.rid) || {} : {};
     const fld = (id, label, val, max, extra = "") => `<div class="field"><label for="${id}">${label}</label><div class="input"><input id="${id}" autocomplete="off" maxlength="${max}" value="${esc(val || "")}" ${extra}></div></div>`;
     body = `<h2>${d.k === "roster-add" ? "Create a player" : "Edit player"}</h2>
+    <div class="photo-pick" id="photo-pick">${photoPickHTML(d.photo === undefined ? Roster.photo(cur) : d.photo)}</div>
+    <input type="file" id="f-photo" accept="image/*" hidden>
     ${fld("f-name", "Name", cur.name, 40, 'autocapitalize="words"')}
     ${fld("f-nick", "Nickname", cur.nick, 30, 'autocapitalize="words"')}
     ${fld("f-motto", "Motto", cur.motto, 80, 'autocapitalize="sentences"')}
@@ -2730,7 +2817,7 @@ function rosterPicker(d) {
   const free = roster.filter(r => !seated.has(r.id)).sort((a, b) => a.name.localeCompare(b.name));
   if (!roster.length) return `<p class="sub">No players to add. Create players from the home screen.</p>`;
   if (!free.length) return `<p class="sub">No players to add. Create players from the home screen.</p>`;
-  return `<div class="field"><label>Player</label><div class="choices roster-pick" role="group" aria-label="Choose a player">${free.map(r => `<button type="button" class="choice" data-rp="${r.id}" aria-pressed="${d.rid === r.id}">${esc(r.name)}</button>`).join("")}</div></div>`;
+  return `<div class="field"><label>Player</label><div class="choices roster-pick" role="group" aria-label="Choose a player">${free.map(r => `<button type="button" class="choice" data-rp="${r.id}" aria-pressed="${d.rid === r.id}">${avatarHTML(r, "sm", false)}${esc(r.name)}</button>`).join("")}</div></div>`;
 }
 /** Buy-ins: count the chips handed over, color by color, up to the buy-in amount. */
 function buyChipsHTML(d) {
@@ -2844,6 +2931,7 @@ function submitDialog() {
       const raw = $("#f-name").value;
       const c = d.cards, done = c.every(x => x.r && x.s);
       const f = { name: raw, nick: $("#f-nick").value, motto: $("#f-motto").value, hand: done ? `${c[0].r}${c[0].s} ${c[1].r}${c[1].s}` : "" };
+      if (d.photo !== undefined) f.photo = d.photo;
       try {
         if (d.k === "roster-add") { const sv = store.get(KEY); setRoster(Roster.add(getRoster(), f, Roster.idsInUse(getHistory(), sv && sv.events))); }
         else {
@@ -3064,6 +3152,8 @@ document.addEventListener("click", e => {
     case "import-paste": { const t = $("#f-paste").value; if (!t.trim()) { $("#f-err").textContent = "Choose a file, or paste the copied data."; return; } return startImport(t); }
     case "import-apply": return applyImport(d.data);
     case "import-merge": return applyMerge(d.data);
+    case "photo-pick": { const inp = $("#f-photo"); if (inp) { inp.value = ""; inp.click(); } return; }
+    case "photo-remove": d.photo = null; $("#photo-pick").innerHTML = photoPickHTML(null); return;
     case "curtis-more-now": { if (!d.done) return; let pick = 0; const err = act(() => { pick = ledger.spinCurtis(true); }); if (err) { closeDialog(); return toast(err); } return openDialog({ k: "curtis-wheel", pick, done: false, from: d.rotation }); }
     case "curtis-more": { let pick = 0; const err = act(() => { pick = ledger.spinCurtis(true); }); if (err) { closeDialog(); return toast(err); } return openDialog({ k: "curtis-wheel", pick, done: false }); }
     case "curtis-yes": { let pick = 0; const err = act(() => { pick = ledger.spinCurtis(); }); if (err) { closeDialog(); return toast(err); } return openDialog({ k: "curtis-wheel", pick, done: false }); }
@@ -3105,6 +3195,70 @@ function showTrendPoint(el) {
 }
 document.addEventListener("click", e => { const tp = e.target.closest && e.target.closest("[data-tp]"); if (tp) showTrendPoint(tp); }, true);
 document.addEventListener("mouseover", e => { const tp = e.target.closest && e.target.closest("[data-tp]"); if (tp) showTrendPoint(tp); });
+// ===== Drag and drop at the table =====
+// Phones: press and hold a seat, then drag it to an open seat (move) or onto another player (swap). Mouse: just drag.
+// A quick tap still opens Re-Buy.
+const seatDrag = (() => {
+  let g = null, swallowClick = false;
+  const HOLD = 320, SLOP = 10;
+  const canDrag = el => el && el.matches("button.pt-seat[data-p]") && !dialog && !ledger.isConcluded && ledger.isStarted;
+  const targetAt = (x, y) => { const t = document.elementFromPoint(x, y); const el = t && t.closest && t.closest(".ptable .pt-seat[data-seat], .ptable button.pt-open[data-seat]"); return el && el !== g.el ? el : null; };
+  function begin() {
+    g.active = true; clearTimeout(g.timer);
+    if (navigator.vibrate) try { navigator.vibrate(15); } catch { /* not supported */ }
+    const r = g.el.getBoundingClientRect(), ghost = g.el.cloneNode(true);
+    ghost.classList.add("drag-ghost"); ghost.removeAttribute("data-a"); ghost.style.width = r.width + "px"; ghost.style.left = g.x + "px"; ghost.style.top = g.y + "px";
+    document.body.appendChild(ghost); g.ghost = ghost; g.el.classList.add("dragging");
+  }
+  function move(x, y) {
+    g.x = x; g.y = y;
+    if (!g.active) { if (Math.hypot(x - g.sx, y - g.sy) > (g.touch ? SLOP : 6)) { if (g.touch) return end(false); begin(); } else return; }
+    g.ghost.style.left = x + "px"; g.ghost.style.top = y + "px";
+    const t = targetAt(x, y); if (t !== g.over) { if (g.over) g.over.classList.remove("drop-target"); g.over = t; if (t) t.classList.add("drop-target"); }
+  }
+  function end(drop) {
+    if (!g) return; clearTimeout(g.timer);
+    const was = g.active, to = drop && g.over ? Number(g.over.dataset.seat) : null, pid = g.pid;
+    if (g.ghost) g.ghost.remove(); g.el.classList.remove("dragging"); if (g.over) g.over.classList.remove("drop-target");
+    g = null;
+    if (!was) return;
+    swallowClick = true; setTimeout(() => (swallowClick = false), 400);
+    if (to == null) return;
+    const other = ledger.table()[to], name = ledger.allNames()[pid];
+    let changed = false; const err = act(() => { changed = ledger.movePlayer(pid, to); });
+    if (err) return toast(err);
+    if (changed) toast(other != null ? `Swapped ${name} and ${ledger.allNames()[other]}` : `Moved ${name} to seat ${to + 1}`);
+  }
+  // Touch: use touch events so scrolling still works until the hold kicks in
+  document.addEventListener("touchstart", e => {
+    const el = e.target.closest && e.target.closest(".ptable .pt-seat"); if (!canDrag(el) || e.touches.length > 1) return;
+    const t = e.touches[0]; g = { el, pid: Number(el.dataset.p), sx: t.clientX, sy: t.clientY, x: t.clientX, y: t.clientY, touch: true, active: false, over: null };
+    g.timer = setTimeout(() => g && begin(), HOLD);
+  }, { passive: true });
+  document.addEventListener("touchmove", e => { if (!g || !g.touch) return; if (g.active) e.preventDefault(); const t = e.touches[0]; move(t.clientX, t.clientY); }, { passive: false });
+  document.addEventListener("touchend", e => { if (!g || !g.touch) return; if (g.active) e.preventDefault(); end(true); }, { passive: false });
+  document.addEventListener("touchcancel", () => g && g.touch && end(false));
+  // Mouse and pen
+  document.addEventListener("pointerdown", e => {
+    if (e.pointerType === "touch" || e.button !== 0) return;
+    const el = e.target.closest && e.target.closest(".ptable .pt-seat"); if (!canDrag(el)) return;
+    g = { el, pid: Number(el.dataset.p), sx: e.clientX, sy: e.clientY, x: e.clientX, y: e.clientY, touch: false, active: false, over: null };
+  });
+  document.addEventListener("pointermove", e => { if (g && !g.touch && e.pointerType !== "touch") { move(e.clientX, e.clientY); if (g && g.active) e.preventDefault(); } });
+  document.addEventListener("pointerup", e => { if (g && !g.touch && e.pointerType !== "touch") end(true); });
+  document.addEventListener("keydown", e => { if (g && e.key === "Escape") end(false); });
+  window.addEventListener("blur", () => g && end(false));
+  // A press-and-hold shouldn't open the phone's menu, and a finished drag shouldn't count as a tap
+  document.addEventListener("contextmenu", e => { if (e.target.closest && e.target.closest(".ptable .pt-seat")) e.preventDefault(); });
+  document.addEventListener("click", e => { if (swallowClick && e.target.closest && e.target.closest(".ptable")) { e.stopPropagation(); e.preventDefault(); swallowClick = false; } }, true);
+  return { get active() { return !!(g && g.active); } };
+})();
+document.addEventListener("change", async e => {
+  if (e.target.id !== "f-photo" || !dialog || !/^roster-(add|rename)$/.test(dialog.k)) return;
+  const d = dialog, file = e.target.files && e.target.files[0]; if (!file) return;
+  try { const url = await makeAvatar(file); if (dialog !== d) return; d.photo = url; $("#photo-pick").innerHTML = photoPickHTML(url); $("#f-err").textContent = ""; }
+  catch (err) { if (dialog === d) $("#f-err").textContent = err instanceof LedgerError ? err.message : "Couldn't open that picture. Try a JPEG or PNG."; }
+});
 document.addEventListener("change", e => {
   if (e.target.id !== "f-file" || !dialog || dialog.k !== "import") return;
   const f = e.target.files && e.target.files[0]; if (!f) return;
