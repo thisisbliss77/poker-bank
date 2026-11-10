@@ -1,5 +1,5 @@
 // Offline support for the iPhone home-screen version. New versions load when online; the last one works offline.
-const CACHE = "pokerbank-20261109223209";
+const CACHE = "pokerbank-20261109232651";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => {
